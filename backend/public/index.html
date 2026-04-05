@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventory Management System Backend</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <p class="eyebrow">API Documentation</p>
+      <h1>Inventory Management System Backend</h1>
+      <p class="lede">
+        The live API is mounted under <code>/api</code>. Client sign-in happens
+        directly with Cognito, while this backend handles token verification,
+        session resolution, organization workflows, inventory operations, and a
+        deprecated compatibility layer for older backend-managed auth routes.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Base Paths</h2>
+      <ul class="endpoint-list">
+        <li><code>GET /</code> <span>Documentation landing page.</span></li>
+        <li><a class="endpoint-link" href="/agents"><code>GET /agents</code></a> <span>Agent-facing integration handoff for client builders.</span></li>
+        <li><a class="endpoint-link" href="/auth"><code>GET /auth</code></a> <span>Documentation for authentication routes.</span></li>
+        <li><a class="endpoint-link" href="/users"><code>GET /users</code></a> <span>Documentation for user routes.</span></li>
+        <li><a class="endpoint-link" href="/organizations"><code>GET /organizations</code></a> <span>Documentation for organization routes.</span></li>
+        <li><a class="endpoint-link" href="/categories"><code>GET /categories</code></a> <span>Documentation for category routes.</span></li>
+        <li><a class="endpoint-link" href="/products"><code>GET /products</code></a> <span>Documentation for product routes.</span></li>
+        <li><a class="endpoint-link" href="/inventory"><code>GET /inventory</code></a> <span>Documentation for inventory routes.</span></li>
+        <li><a class="endpoint-link" href="/metrics"><code>GET /metrics</code></a> <span>Documentation for metric catalog, definitions, previews, and inventory aggregate routes.</span></li>
+        <li><a class="endpoint-link" href="/alerts"><code>GET /alerts</code></a> <span>Documentation for alert definition and alert record routes.</span></li>
+        <li><code>GET /api/health</code> <span>Backend and database health check.</span></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Agent Handoff</h2>
+      <ul class="endpoint-list">
+        <li><a class="endpoint-link" href="/agents"><code>GET /agents</code></a> <span>Agent-facing notes for building or adapting a client against the live backend.</span></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Authentication</h2>
+      <ul class="endpoint-list">
+        <li><a class="endpoint-link" href="/auth#auth-accounts"><code>GET /api/auth/accounts</code></a> <span>Protected account listing. Accepts Cognito or backend bearer tokens.</span></li>
+        <li><a class="endpoint-link" href="/auth#auth-permissions"><code>GET /api/auth/permissions</code></a> <span>Protected canonical permission catalog with integer ids.</span></li>
+        <li><a class="endpoint-link" href="/auth#auth-cognito-status"><code>GET /api/auth/cognito</code></a> <span>Cognito status for the preferred direct client auth flow.</span></li>
+        <li><a class="endpoint-link" href="/auth#auth-cognito-refresh"><code>POST /api/auth/cognito/refresh</code></a> <span>Refresh Cognito access and ID tokens using a refresh token.</span></li>
+        <li><a class="endpoint-link" href="/auth#auth-cognito-verify"><code>POST /api/auth/cognito/verify</code></a> <span>Verify a Cognito access token without changing local state.</span></li>
+        <li><a class="endpoint-link" href="/auth#auth-cognito-resolve"><code>POST /api/auth/cognito/resolve</code></a> <span>Verify Cognito tokens and resolve or provision the local account session.</span></li>
+        <li><a class="endpoint-link" href="/auth#auth-cognito-login"><code>POST /api/auth/cognito/login</code></a> <span>Deprecated backend-mediated Cognito login retained only for compatibility.</span></li>
+        <li><a class="endpoint-link" href="/auth#auth-cognito-register"><code>POST /api/auth/cognito/register</code></a> <span>Deprecated backend-mediated Cognito registration retained only for compatibility.</span></li>
+        <li><a class="endpoint-link" href="/auth#auth-backend-login"><code>POST /api/auth/backend/login</code></a> <span>Deprecated local backend login retained only for compatibility.</span></li>
+        <li><a class="endpoint-link" href="/auth#auth-backend-register"><code>POST /api/auth/backend/register</code></a> <span>Deprecated local backend registration retained only for compatibility.</span></li>
+        <li><a class="endpoint-link" href="/auth#auth-login-alias"><code>POST /api/auth/login</code></a> <span>Deprecated alias for local backend login.</span></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Users and Organizations</h2>
+      <ul class="endpoint-list">
+        <li><a class="endpoint-link" href="/users#users-me-patch"><code>PATCH /api/users/me</code></a> <span>Update the authenticated user's profile fields.</span></li>
+        <li><a class="endpoint-link" href="/organizations#organizations-me"><code>GET /api/organizations/me</code></a> <span>Get the authenticated user's current organization summary, including org-wide stock thresholds.</span></li>
+        <li><a class="endpoint-link" href="/organizations#organizations-members"><code>GET /api/organizations/me/members</code></a> <span>List members in the authenticated user's current organization.</span></li>
+        <li><a class="endpoint-link" href="/organizations#organizations-member-count"><code>GET /api/organizations/me/members/count</code></a> <span>Get the member count for the authenticated user's current organization.</span></li>
+        <li><a class="endpoint-link" href="/organizations#organizations-roles"><code>GET /api/organizations/me/roles</code></a> <span>List assignable organization roles in the current organization.</span></li>
+        <li><a class="endpoint-link" href="/organizations#organizations-permissions"><code>GET /api/organizations/me/permissions</code></a> <span>Get the assignable organization permission catalog.</span></li>
+        <li><a class="endpoint-link" href="/organizations#organizations-role-create"><code>POST /api/organizations/me/roles</code></a> <span>Create a new role in the current organization.</span></li>
+        <li><a class="endpoint-link" href="/organizations#organizations-member-update"><code>PATCH /api/organizations/me/members/:accountId</code></a> <span>Update a member's role assignment in the current organization.</span></li>
+        <li><a class="endpoint-link" href="/organizations#organizations-create"><code>POST /api/organizations</code></a> <span>Create a new organization and switch the current account into it as owner.</span></li>
+        <li><a class="endpoint-link" href="/organizations#organizations-update"><code>PATCH /api/organizations/:organizationId</code></a> <span>Update the authenticated user's current organization name and stock thresholds.</span></li>
+        <li><a class="endpoint-link" href="/organizations#organizations-delete"><code>DELETE /api/organizations/:organizationId</code></a> <span>Delete the authenticated user's current organization when allowed.</span></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Metrics</h2>
+      <ul class="endpoint-list">
+        <li><a class="endpoint-link" href="/metrics#metrics-catalog"><code>GET /api/metrics/catalog</code></a> <span>Get the backend base-metric catalog available for custom formula definitions.</span></li>
+        <li><a class="endpoint-link" href="/metrics#metrics-definitions-list"><code>GET /api/metrics/definitions</code></a> <span>List the current organization's custom metric definitions.</span></li>
+        <li><a class="endpoint-link" href="/metrics#metrics-definitions-get"><code>GET /api/metrics/definitions/:metricId</code></a> <span>Get one custom metric definition by id.</span></li>
+        <li><a class="endpoint-link" href="/metrics#metrics-definitions-create"><code>POST /api/metrics/definitions</code></a> <span>Create a custom metric definition from validated formula JSON.</span></li>
+        <li><a class="endpoint-link" href="/metrics#metrics-definitions-update"><code>PATCH /api/metrics/definitions/:metricId</code></a> <span>Update an existing metric definition.</span></li>
+        <li><a class="endpoint-link" href="/metrics#metrics-definitions-delete"><code>DELETE /api/metrics/definitions/:metricId</code></a> <span>Delete an existing metric definition.</span></li>
+        <li><a class="endpoint-link" href="/metrics#metrics-definitions-preview"><code>POST /api/metrics/definitions/preview</code></a> <span>Preview a metric definition against live base metrics without persisting it.</span></li>
+        <li><a class="endpoint-link" href="/metrics#metrics-overview"><code>GET /api/metrics/inventory/overview</code></a> <span>Get inventory overview metrics with optional dashboard filters and threshold overrides; otherwise org thresholds are used.</span></li>
+        <li><a class="endpoint-link" href="/metrics#metrics-movement-trend"><code>GET /api/metrics/inventory/movement-trend</code></a> <span>Get daily inbound and outbound movement metrics with `days`, optional dashboard filters, and org-default threshold behavior.</span></li>
+        <li><a class="endpoint-link" href="/metrics#metrics-movement-summary"><code>GET /api/metrics/inventory/movement-summary</code></a> <span>Get org-wide or per-product movement totals with optional filters; threshold-sensitive filters default to org settings.</span></li>
+        <li><a class="endpoint-link" href="/metrics#metrics-category-breakdown"><code>GET /api/metrics/inventory/category-breakdown</code></a> <span>Get inventory value breakdown by category with `top`, optional filters, and org-default threshold behavior.</span></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Alerts</h2>
+      <ul class="endpoint-list">
+        <li><a class="endpoint-link" href="/alerts#alerts-definitions-list"><code>GET /api/alerts/definitions</code></a> <span>List organization-scoped alert definitions backed by validated condition JSON.</span></li>
+        <li><a class="endpoint-link" href="/alerts#alerts-definitions-get"><code>GET /api/alerts/definitions/:alertDefinitionId</code></a> <span>Get one alert definition by id.</span></li>
+        <li><a class="endpoint-link" href="/alerts#alerts-definitions-create"><code>POST /api/alerts/definitions</code></a> <span>Create an alert definition. Evaluation engine status is currently stubbed.</span></li>
+        <li><a class="endpoint-link" href="/alerts#alerts-definitions-update"><code>PATCH /api/alerts/definitions/:alertDefinitionId</code></a> <span>Update an existing alert definition. Evaluation engine status is currently stubbed.</span></li>
+        <li><a class="endpoint-link" href="/alerts#alerts-definitions-delete"><code>DELETE /api/alerts/definitions/:alertDefinitionId</code></a> <span>Delete an alert definition from the current organization scope.</span></li>
+        <li><a class="endpoint-link" href="/alerts#alerts-list"><code>GET /api/alerts</code></a> <span>List alert records and sync active alert definitions into persisted alerts before returning results.</span></li>
+        <li><a class="endpoint-link" href="/alerts#alerts-get"><code>GET /api/alerts/:alertId</code></a> <span>Get one persisted alert record by id.</span></li>
+        <li><a class="endpoint-link" href="/alerts#alerts-create"><code>POST /api/alerts</code></a> <span>Create a persisted alert record. Productless records are allowed only for custom definition-linked alerts.</span></li>
+        <li><a class="endpoint-link" href="/alerts#alerts-update"><code>PATCH /api/alerts/:alertId</code></a> <span>Update an alert record and acknowledge it when status becomes acknowledged.</span></li>
+        <li><a class="endpoint-link" href="/alerts#alerts-delete"><code>DELETE /api/alerts/:alertId</code></a> <span>Delete an alert record from the current organization scope.</span></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Products, Categories, and Inventory</h2>
+      <ul class="endpoint-list">
+        <li><a class="endpoint-link" href="/categories#categories-list"><code>GET /api/categories</code></a> <span>List categories.</span></li>
+        <li><a class="endpoint-link" href="/categories#categories-get"><code>GET /api/categories/:categoryId</code></a> <span>Get a category.</span></li>
+        <li><a class="endpoint-link" href="/categories#categories-create"><code>POST /api/categories</code></a> <span>Create a category.</span></li>
+        <li><a class="endpoint-link" href="/categories#categories-update"><code>PUT /api/categories/:categoryId</code></a> <span>Update a category.</span></li>
+        <li><a class="endpoint-link" href="/categories#categories-delete"><code>DELETE /api/categories/:categoryId</code></a> <span>Delete a category.</span></li>
+        <li><a class="endpoint-link" href="/products#products-list"><code>GET /api/products</code></a> <span>List products.</span></li>
+        <li><a class="endpoint-link" href="/products#products-get"><code>GET /api/products/:productId</code></a> <span>Get a product.</span></li>
+        <li><a class="endpoint-link" href="/products#products-image-upload"><code>POST /api/uploads/products/presign</code></a> <span>Create a presigned S3 upload URL for product images.</span></li>
+        <li><a class="endpoint-link" href="/products#products-create"><code>POST /api/products</code></a> <span>Create a product.</span></li>
+        <li><a class="endpoint-link" href="/products#products-update"><code>PUT /api/products/:productId</code></a> <span>Update a product.</span></li>
+        <li><a class="endpoint-link" href="/products#products-delete"><code>DELETE /api/products/:productId</code></a> <span>Delete a product.</span></li>
+        <li><a class="endpoint-link" href="/inventory#inventory-types"><code>GET /api/inventory/movements/types</code></a> <span>Get the supported stock movement type catalog.</span></li>
+        <li><a class="endpoint-link" href="/inventory#inventory-list"><code>GET /api/inventory</code></a> <span>Inventory snapshot alias.</span></li>
+        <li><a class="endpoint-link" href="/inventory#inventory-summary"><code>GET /api/inventory/summary</code></a> <span>Inventory snapshot.</span></li>
+        <li><a class="endpoint-link" href="/inventory#inventory-adjustments-create"><code>POST /api/inventory/adjustments</code></a> <span>Record a manual inventory adjustment with a required persisted reason.</span></li>
+        <li><a class="endpoint-link" href="/inventory#inventory-movements-list"><code>GET /api/inventory/movements</code></a> <span>List stock movements.</span></li>
+        <li><a class="endpoint-link" href="/inventory#inventory-movements-create"><code>POST /api/inventory/movements</code></a> <span>Record stock movement with an optional persisted reason.</span></li>
+        <li><a class="endpoint-link" href="/inventory#inventory-by-product"><code>GET /api/inventory/:productId</code></a> <span>Get inventory for a single product.</span></li>
+        <li><a class="endpoint-link" href="/inventory#inventory-create"><code>POST /api/inventory</code></a> <span>Create an inventory record.</span></li>
+        <li><a class="endpoint-link" href="/inventory#inventory-update"><code>PATCH /api/inventory/:productId</code></a> <span>Update inventory for a product.</span></li>
+        <li><a class="endpoint-link" href="/inventory#inventory-delete"><code>DELETE /api/inventory/:productId</code></a> <span>Delete inventory for a product.</span></li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

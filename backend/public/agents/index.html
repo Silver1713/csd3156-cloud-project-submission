@@ -1,0 +1,2154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent API Contract</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <p class="eyebrow">Machine Contract</p>
+      <h1>/agents Backend Contract</h1>
+      <p class="lede">
+        Parse-oriented integration contract for AI agents implementing a frontend or API client.
+      </p>
+      <nav class="doc-nav">
+        <a href="/">All Docs</a>
+        <a href="#contract-summary">Summary</a>
+        <a href="#authentication">Authentication</a>
+        <a href="#global-rules">Global Rules</a>
+        <a href="#route-groups">Route Groups</a>
+        <a href="#pagination">Pagination</a>
+        <a href="#enums">Enums</a>
+        <a href="#errors">Errors</a>
+        <a href="#endpoint-contracts">Endpoints</a>
+        <a href="#implementation-guidance">Implementation Guidance</a>
+      </nav>
+    </section>
+
+    <section class="card">
+      <article class="doc-section" id="contract-summary">
+        <h3>Contract Summary</h3>
+        <pre>Hosted docs origin
+https://inventory-api.jiahaoyeo.com
+
+Hosted API origin
+https://inventory-api.jiahaoyeo.com/api
+
+Local docs origin
+http://localhost:3000
+
+Local API origin
+http://localhost:3000/api
+
+Rules
+- Only paths under /api/* are live API endpoints.
+- Non-/api paths are documentation pages, including /, /auth, /users, /organizations, /products, /inventory, and /agents.
+- Do not call /agents as a data endpoint.
+- Conservative client base URL:
+  origin = https://inventory-api.jiahaoyeo.com
+  apiBase = origin + "/api"
+- All request and response bodies are UTF-8 JSON unless the route has no body.</pre>
+      </article>
+
+      <article class="doc-section" id="authentication">
+        <h3>Authentication</h3>
+        <pre>Preferred flow
+1. Client authenticates directly with AWS Cognito.
+2. Client receives accessToken and idToken from Cognito.
+3. Client calls POST /api/auth/cognito/resolve with both tokens.
+4. Backend verifies Cognito identity and resolves or provisions local backend account state.
+5. Client uses Authorization: Bearer &lt;accessToken&gt; on protected backend routes.
+
+Authorization token for protected backend routes
+- Use accessToken.
+- Do not use idToken as the Authorization bearer token for protected API routes.
+- idToken is required by POST /api/auth/cognito/resolve for account resolution/provisioning.
+
+Resolve route
+POST /api/auth/cognito/resolve
+- Verifies accessToken and idToken.
+- If local account already exists for the Cognito subject, returns that account.
+- If local account does not exist, backend provisions:
+  - organization
+  - owner role
+  - owner role permissions
+  - local account linked to the Cognito subject
+
+Restrictions
+- Frontend must not create local backend account state directly.
+- Frontend must not create organization membership state as a substitute for resolve.
+- GET /api/auth/accounts is not the provisioning flow.
+
+Protected-route auth middleware behavior
+- Backend first attempts Cognito access-token verification.
+- If Cognito verification fails, backend may also accept backend-issued bearer tokens for deprecated compatibility flows.
+- New integrations should use Cognito access tokens only.</pre>
+      </article>
+
+      <article class="doc-section" id="global-rules">
+        <h3>Global API Rules</h3>
+        <pre>Content type
+- JSON request bodies: Content-Type: application/json
+- JSON payload encoding: UTF-8 JSON
+
+Scoping
+- All protected business data routes are derived from authenticated backend account context.
+- Product and inventory data are organization-scoped.
+- Backend derives organization scope from authenticated backend account context.
+- Current implementation uses req.authAccount.orgId for organization scoping on products and inventory.
+
+Forbidden client-derived fields
+- Do not send ownerId unless a route explicitly defines it as an input field. None of the documented write routes do.
+- Do not send orgId unless a route explicitly defines it as an input field. None of the documented preferred routes do.
+- Do not send actorId on movement creation. Backend derives actorId from the authenticated backend account.
+- Do not send raw ADJUSTMENT_* movement types from inventory adjustment screens. Use the dedicated adjustment route.
+
+Read-only backend-derived fields
+- ownerId
+- orgId in protected account/user responses
+- actorId for movement creation result
+- createdAt
+- updatedAt
+- id on create/update responses unless route defines it as a path parameter
+
+Date filters
+- createdFrom and createdTo are parsed by backend date coercion.
+- Conservative client format: ISO 8601 UTC datetime string, example 2026-03-29T00:00:00.000Z.
+- Exact accepted non-ISO formats are unspecified. Do not rely on non-ISO date strings.
+
+Unknown fields
+- Do not guess extra request fields beyond documented fields.
+- If a schema is marked inferred or partial, send only the documented minimum set.</pre>
+      </article>
+
+      <article class="doc-section" id="route-groups">
+        <h3>Public Vs Protected Routes</h3>
+        <pre>Public routes
+- GET /api/health | auth required: no
+- GET /api/auth/cognito | auth required: no
+- POST /api/auth/cognito/refresh | auth required: no
+- POST /api/auth/cognito/verify | auth required: no
+- POST /api/auth/cognito/resolve | auth required: no
+
+Protected routes
+- GET /api/auth/accounts | auth required: yes
+- GET /api/auth/permissions | auth required: yes
+- PATCH /api/users/me | auth required: yes
+- GET /api/organizations/me | auth required: yes
+- GET /api/organizations/me/members | auth required: yes
+- GET /api/organizations/me/members/count | auth required: yes
+- GET /api/metrics/catalog | auth required: yes
+- GET /api/metrics/definitions | auth required: yes
+- GET /api/metrics/inventory/overview | auth required: yes
+- GET /api/metrics/inventory/movement-trend | auth required: yes
+- GET /api/metrics/inventory/movement-summary | auth required: yes
+- GET /api/metrics/inventory/category-breakdown | auth required: yes
+- POST /api/metrics/definitions | auth required: yes
+- GET /api/alerts/definitions | auth required: yes
+- GET /api/alerts/definitions/:alertDefinitionId | auth required: yes
+- POST /api/alerts/definitions | auth required: yes
+- PATCH /api/alerts/definitions/:alertDefinitionId | auth required: yes
+- DELETE /api/alerts/definitions/:alertDefinitionId | auth required: yes
+- GET /api/alerts | auth required: yes
+- GET /api/alerts/:alertId | auth required: yes
+- POST /api/alerts | auth required: yes
+- PATCH /api/alerts/:alertId | auth required: yes
+- DELETE /api/alerts/:alertId | auth required: yes
+- POST /api/organizations | auth required: yes
+- PATCH /api/organizations/:organizationId | auth required: yes
+- DELETE /api/organizations/:organizationId | auth required: yes
+- GET /api/categories | auth required: yes
+- GET /api/categories/:categoryId | auth required: yes
+- POST /api/categories | auth required: yes
+- PUT /api/categories/:categoryId | auth required: yes
+- DELETE /api/categories/:categoryId | auth required: yes
+- GET /api/products | auth required: yes
+- GET /api/products/:productId | auth required: yes
+- POST /api/uploads/products/presign | auth required: yes
+- POST /api/products | auth required: yes
+- PUT /api/products/:productId | auth required: yes
+- GET /api/inventory | auth required: yes
+- GET /api/inventory/summary | auth required: yes
+- GET /api/inventory/:productId | auth required: yes
+- POST /api/inventory | auth required: yes
+- PATCH /api/inventory/:productId | auth required: yes
+- DELETE /api/inventory/:productId | auth required: yes
+- POST /api/inventory/adjustments | auth required: yes
+- GET /api/inventory/movements | auth required: yes
+- POST /api/inventory/movements | auth required: yes</pre>
+      </article>
+
+      <article class="doc-section" id="pagination">
+        <h3>Pagination Contract</h3>
+        <pre>Pagination object
+{
+  "limit": number,
+  "offset": number,
+  "total": number,
+  "hasMore": boolean
+}
+
+Paginated endpoints
+- GET /api/alerts
+- GET /api/products
+- GET /api/inventory/movements
+
+Not documented as paginated
+- GET /api/auth/accounts
+- GET /api/organizations/me/members
+- GET /api/organizations/me/members/count
+- GET /api/alerts/:alertId
+- GET /api/inventory
+- GET /api/inventory/summary
+- GET /api/products/:productId
+- GET /api/inventory/:productId
+
+Rules
+- Do not assume pagination on endpoints not listed as paginated.
+- limit and offset are numeric query parameters on paginated endpoints.
+- Current defaults where implemented:
+  - limit default 50
+  - offset default 0
+  - limit max 200</pre>
+      </article>
+
+      <article class="doc-section" id="enums">
+        <h3>Enum Definitions</h3>
+        <pre>AuthProvider
+- "backend"
+- "cognito"
+
+MovementType
+- "STOCK_IN"
+- "STOCK_OUT"
+- "TRANSFER_IN"
+- "TRANSFER_OUT"
+- "ADJUSTMENT_INCREASE"
+- "ADJUSTMENT_DECREASE"
+
+Claims.tokenUse
+- "access"
+- "id"</pre>
+      </article>
+
+      <article class="doc-section" id="errors">
+        <h3>Error Contract</h3>
+        <pre>Current known backend behavior
+- Most error responses use:
+  {
+    "message": "string"
+  }
+- Validation errors often use:
+  {
+    "message": "string",
+    "errors": { ... }
+  }
+- Exact error envelope is not globally standardized across all routes.
+
+Unspecified current backend error envelope
+- There is no single exact backend-wide error envelope beyond the patterns above.
+
+Recommended client normalization shape
+{
+  "error": {
+    "code": "string",
+    "message": "string",
+    "details": {}
+  }
+}
+
+Recommended handling categories
+- 400 validation error
+- 401 unauthenticated
+- 403 forbidden
+- 404 not found
+- 409 conflict
+- 429 rate limited
+- 500 internal error
+
+Current route-specific status behavior grounded by implementation
+- 400: validation failures, invalid route params, unsupported movement type, organization create/update/delete failures
+- 401: missing bearer token, invalid bearer token, unlinked Cognito identity, missing authenticated user context
+- 403: missing base permission, missing organization permission, failed organization access resolution
+- 404: product not found, inventory not found
+- 409: inventory already exists, insufficient stock
+- 429: not specified by current implementation
+- 500: health database unavailable, inventory load/create/update/delete failures, movement creation failures, Cognito status failure
+
+Client rule
+- Parse message when present.
+- Parse errors when present.
+- Do not assume every error response contains the same keys.</pre>
+      </article>
+
+      <article class="doc-section" id="endpoint-contracts">
+        <h3>Endpoint Contracts</h3>
+        <pre>GET /api/health
+Purpose
+- Backend and database health check.
+Auth required
+- No
+Query parameters
+- None
+Path parameters
+- None
+Request body
+- None
+Success response 200
+{
+  "message": "Backend is running",
+  "database": "connected"
+}
+Other known response
+- 500
+  {
+    "message": "Backend is running but database is unavailable",
+    "error": "string"
+  }
+Notes
+- Public route.
+
+GET /api/auth/accounts
+Purpose
+- Return local backend accounts.
+Auth required
+- Yes
+Query parameters
+- None
+Path parameters
+- None
+Request body
+- None
+Success response 200
+{
+  "accounts": [
+    {
+      "id": "string",
+      "orgId": "string",
+      "username": "string",
+      "email": "string",
+      "authProvider": "backend" | "cognito",
+      "cognitoSub": "string | null",
+      "roleId": "string | null"
+    }
+  ]
+}
+Notes
+- Current implementation returns all local accounts from backend storage.
+- Current implementation is protected but not documented as paginated.
+- Do not use this endpoint as the organization member directory. Use GET /api/organizations/me/members for current-org membership.
+
+GET /api/auth/permissions
+Purpose
+- Return the canonical backend permission catalog and stable integer mapping.
+Auth required
+- Yes
+Query parameters
+- None
+Path parameters
+- None
+Request body
+- None
+Success response 200
+{
+  "permissions": [
+    {
+      "id": number,
+      "key": "string"
+    }
+  ],
+  "permissionMap": {
+    "permission:string": number
+  }
+}
+Notes
+- Permission ids are backend-defined stable integer constants from the backend permission catalog.
+- This endpoint is system metadata, not org-scoped business data.
+- Use permissionMap when the client needs key-to-int conversion.
+
+GET /api/auth/cognito
+Purpose
+- Return Cognito configuration status.
+Auth required
+- No
+Query parameters
+- None
+Path parameters
+- None
+Request body
+- None
+Success response 200
+{
+  "provider": "cognito",
+  "configured": true | false,
+  "message": "string"
+}
+Notes
+- Public route.
+
+POST /api/auth/cognito/refresh
+Purpose
+- Refresh Cognito access and ID tokens using a refresh token.
+Auth required
+- No
+Query parameters
+- None
+Path parameters
+- None
+Request body
+Exact request schema
+{
+  "refreshToken": "string"
+}
+Field rules
+- refreshToken: required
+Success response 200
+{
+  "provider": "cognito",
+  "accessToken": "string",
+  "idToken": "string | null",
+  "refreshToken": "string | null",
+  "expiresIn": number | null,
+  "tokenType": "string | null"
+}
+Notes
+- Intended to renew expired or expiring Cognito access tokens.
+- Current implementation returns the original refresh token when Cognito does not issue a replacement refresh token.
+
+POST /api/auth/cognito/verify
+Purpose
+- Verify Cognito access token without provisioning local backend account state.
+Auth required
+- No
+Query parameters
+- None
+Path parameters
+- None
+Request body
+Exact request schema
+{
+  "accessToken": "string"
+}
+Field rules
+- accessToken: required
+Success response 200
+{
+  "provider": "cognito",
+  "verified": true,
+  "account": {
+    "id": "string",
+    "orgId": "string",
+    "username": "string",
+    "email": "string",
+    "authProvider": "backend" | "cognito",
+    "cognitoSub": "string | null",
+    "roleId": "string | null"
+  } | null,
+  "claims": {
+    "sub": "string",
+    "tokenUse": "access" | "id",
+    "email": "string"?,
+    "username": "string"?,
+    "cognitoUsername": "string"?
+  }
+}
+Notes
+- Intended for verification only.
+- Does not provision local backend account state.
+- Client should still call resolve for preferred new-session bootstrap.
+
+POST /api/auth/cognito/resolve
+Purpose
+- Verify Cognito session and resolve or provision local backend account state.
+Auth required
+- No
+Query parameters
+- None
+Path parameters
+- None
+Request body
+Exact request schema
+{
+  "accessToken": "string",
+  "idToken": "string"
+}
+Field rules
+- accessToken: required
+- idToken: required
+Success response 200
+{
+  "provider": "cognito",
+  "verified": true,
+  "provisioned": true | false,
+  "account": {
+    "id": "string",
+    "orgId": "string",
+    "username": "string",
+    "email": "string",
+    "authProvider": "backend" | "cognito",
+    "cognitoSub": "string | null",
+    "roleId": "string | null"
+  },
+  "claims": {
+    "sub": "string",
+    "tokenUse": "access" | "id",
+    "email": "string"?,
+    "username": "string"?,
+    "cognitoUsername": "string"?
+  }
+}
+Notes
+- If account exists: provisioned = false.
+- If account does not exist: backend creates organization, owner role, owner role permissions, and local account; provisioned = true.
+- Frontend must not attempt to create equivalent local state directly.
+
+PATCH /api/users/me
+Purpose
+- Update current authenticated user's profile fields.
+Auth required
+- Yes
+Query parameters
+- None
+Path parameters
+- None
+Request body
+Exact request schema
+{
+  "name": "string | null"?,
+  "profileUrl": "string | null"?
+}
+Field rules
+- At least one of name or profileUrl is required.
+- name: optional, nullable, trimmed string, min length 1 when not null, max length 255
+- profileUrl: optional, nullable, URL string when not null
+- orgId: server-derived, read-only
+- id: read-only
+Success response 200
+{
+  "user": {
+    "id": "string",
+    "orgId": "string",
+    "profileUrl": "string | null",
+    "name": "string | null",
+    "email": "string",
+    "username": "string",
+    "authProvider": "backend" | "cognito",
+    "cognitoSub": "string | null",
+    "roleId": "string | null",
+    "createdAt": "ISO 8601 datetime string",
+    "updatedAt": "ISO 8601 datetime string"
+  }
+}
+Notes
+- Self target is implicit. No userId path parameter.
+
+GET /api/organizations/me/members
+Purpose
+- List members in the current authenticated account's organization.
+Auth required
+- Yes
+Additional authorization
+- Requires any of:
+  - organization:members:read
+  - organization:members:manage
+  - organization:manage
+Query parameters
+- None
+Path parameters
+- None
+Request body
+- None
+Success response 200
+{
+  "members": [
+    {
+      "accountId": "string",
+      "orgId": "string",
+      "email": "string",
+      "username": "string",
+      "name": "string | null",
+      "profileUrl": "string | null",
+      "authProvider": "backend" | "cognito",
+      "cognitoSub": "string | null",
+      "roleId": "string | null",
+      "roleName": "string | null",
+      "createdAt": "ISO 8601 datetime string",
+      "updatedAt": "ISO 8601 datetime string"
+    }
+  ]
+}
+Notes
+- orgId is backend-derived current organization scope.
+- Not documented as paginated.
+
+GET /api/organizations/me/members/count
+Purpose
+- Return current organization summary and member count.
+Auth required
+- Yes
+Additional authorization
+- Requires any of:
+  - organization:members:read
+  - organization:members:manage
+  - organization:manage
+Query parameters
+- None
+Path parameters
+- None
+Request body
+- None
+Success response 200
+{
+  "organization": {
+    "id": "string",
+    "name": "string | null"
+  },
+  "memberCount": number
+}
+Notes
+- organization is current authenticated account context organization.
+
+GET /api/organizations/me
+Purpose
+- Return the current authenticated account's organization summary.
+Auth required
+- Yes
+Additional authorization
+- Requires any of:
+  - organization:read
+  - organization:update
+  - organization:manage
+  - organization:members:read
+  - organization:members:manage
+Query parameters
+- None
+Path parameters
+- None
+Request body
+- None
+Success response 200
+{
+  "organization": {
+    "id": "string",
+    "name": "string | null",
+    "criticalStockThreshold": number,
+    "lowStockThreshold": number
+  }
+}
+Notes
+- Intended for current-org UI context such as app headers, workspace labels, and organization settings.
+
+GET /api/metrics/catalog
+Purpose
+- Return the backend base metric catalog available for custom metric definitions.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - inventory:read
+Query parameters
+- None
+Path parameters
+- None
+Request body
+- None
+Success response 200
+{
+  "metrics": [
+    {
+      "key": "string",
+      "name": "string",
+      "description": "string",
+      "scope": "organization",
+      "format": "number | percent | currency | quantity"
+    }
+  ]
+}
+Notes
+- This is the authoritative backend catalog for custom metric builders.
+- Clients should not hardcode base metric labels or formats when this route is available.
+
+GET /api/metrics/definitions
+Purpose
+- List the current organization's custom metric definitions.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - inventory:read
+Query parameters
+- None
+Path parameters
+- None
+Request body
+- None
+Success response 200
+{
+  "metrics": [
+    {
+      "id": "string",
+      "orgId": "string",
+      "key": "string",
+      "name": "string",
+      "description": "string | null",
+      "scope": "organization" | "product" | "category",
+      "format": "number" | "percent" | "currency" | "quantity",
+      "definition": {},
+      "isActive": true,
+      "createdBy": "string",
+      "createdAt": "ISO 8601 datetime string",
+      "updatedAt": "ISO 8601 datetime string"
+    }
+  ]
+}
+Notes
+- definition is the validated formula JSON tree originally stored for the metric.
+- Returned metrics are scoped to the authenticated account's current organization.
+
+GET /api/alerts/definitions
+Purpose
+- List the current organization's alert definitions.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - alert:manage
+Query parameters
+- None
+Path parameters
+- None
+Request body
+- None
+Success response 200
+{
+  "alertDefinitions": [
+    {
+      "id": "string",
+      "orgId": "string",
+      "key": "string",
+      "name": "string",
+      "description": "string | null",
+      "severity": "low" | "medium" | "high",
+      "scope": "organization" | "product" | "category",
+      "condition": {},
+      "isActive": true,
+      "createdBy": "string",
+      "createdAt": "ISO 8601 datetime string",
+      "updatedAt": "ISO 8601 datetime string"
+    }
+  ]
+}
+Notes
+- condition is validated JSON representing the future alert evaluation rule.
+- The rule engine is not implemented yet; definitions are persisted for later evaluation.
+
+GET /api/alerts/definitions/:alertDefinitionId
+Purpose
+- Return one alert definition in the current organization.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - alert:manage
+Path parameters
+- alertDefinitionId: string UUID, required
+Request body
+- None
+Success response 200
+{
+  "alertDefinition": {
+    "id": "string",
+    "orgId": "string",
+    "key": "string",
+    "name": "string",
+    "description": "string | null",
+    "severity": "low" | "medium" | "high",
+    "scope": "organization" | "product" | "category",
+    "condition": {},
+    "isActive": true,
+    "createdBy": "string",
+    "createdAt": "ISO 8601 datetime string",
+    "updatedAt": "ISO 8601 datetime string"
+  }
+}
+
+POST /api/alerts/definitions
+Purpose
+- Create a persisted alert definition for the current organization.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - alert:manage
+Request body
+Exact request schema
+{
+  "key": "string",
+  "name": "string",
+  "description": "string | null"?,
+  "severity": "low" | "medium" | "high"?,
+  "scope": "organization" | "product" | "category"?,
+  "condition": {}
+}
+Field rules
+- key: required, snake_case starting with a lowercase letter
+- name: required, trimmed string, min length 1, max length 128
+- description: optional, nullable, max length 500
+- severity: optional, defaults to medium
+- scope: optional, defaults to organization
+- condition: required validated JSON condition tree
+Success response 201
+{
+  "alertDefinition": {
+    "id": "string",
+    "orgId": "string",
+    "key": "string",
+    "name": "string",
+    "description": "string | null",
+    "severity": "low" | "medium" | "high",
+    "scope": "organization" | "product" | "category",
+    "condition": {},
+    "isActive": true,
+    "createdBy": "string",
+    "createdAt": "ISO 8601 datetime string",
+    "updatedAt": "ISO 8601 datetime string"
+  },
+  "engineStatus": "stub"
+}
+Notes
+- engineStatus is currently always stub because alert evaluation is not implemented yet.
+- Condition JSON supports comparison and logical nodes over base metrics and custom metric definitions.
+
+PATCH /api/alerts/definitions/:alertDefinitionId
+Purpose
+- Update an existing alert definition in the current organization.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - alert:manage
+Path parameters
+- alertDefinitionId: string UUID, required
+Request body
+Exact request schema
+{
+  "name": "string"?,
+  "description": "string | null"?,
+  "severity": "low" | "medium" | "high"?,
+  "scope": "organization" | "product" | "category"?,
+  "condition": {}?,
+  "isActive": true | false?
+}
+Field rules
+- At least one field is required.
+- condition: optional validated JSON condition tree
+Success response 200
+{
+  "alertDefinition": {
+    "id": "string",
+    "orgId": "string",
+    "key": "string",
+    "name": "string",
+    "description": "string | null",
+    "severity": "low" | "medium" | "high",
+    "scope": "organization" | "product" | "category",
+    "condition": {},
+    "isActive": true,
+    "createdBy": "string",
+    "createdAt": "ISO 8601 datetime string",
+    "updatedAt": "ISO 8601 datetime string"
+  },
+  "engineStatus": "stub"
+}
+
+DELETE /api/alerts/definitions/:alertDefinitionId
+Purpose
+- Delete an alert definition from the current organization.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - alert:manage
+Path parameters
+- alertDefinitionId: string UUID, required
+Request body
+- None
+Success response 200
+{
+  "alertDefinition": {
+    "id": "string",
+    "orgId": "string",
+    "key": "string",
+    "name": "string",
+    "description": "string | null",
+    "severity": "low" | "medium" | "high",
+    "scope": "organization" | "product" | "category",
+    "condition": {},
+    "isActive": true,
+    "createdBy": "string",
+    "createdAt": "ISO 8601 datetime string",
+    "updatedAt": "ISO 8601 datetime string"
+  }
+}
+
+GET /api/alerts
+Purpose
+- List alert records in the current authenticated organization.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - alert:manage
+Query parameters
+- status: "active" | "acknowledged" | "resolved", optional
+- type: "low_stock" | "critical_stock" | "custom", optional
+- productId: string UUID, optional
+- limit: number, optional, default 50, max 200
+- offset: number, optional, default 0, min 0
+Path parameters
+- None
+Request body
+- None
+Notes
+- Before returning results, backend evaluates active saved alert definitions and creates or resolves linked custom alert records as needed.
+- Productless custom alerts are valid for organization-level definition-based alerts.
+Success response 200
+{
+  "alerts": [
+    {
+      "id": "string",
+      "ownerId": "string",
+      "productId": "string | null",
+      "productName": "string | null",
+      "productSku": "string | null",
+      "triggeredByMovementId": "string | null",
+      "type": "low_stock" | "critical_stock" | "custom",
+      "status": "active" | "acknowledged" | "resolved",
+      "thresholdQuantity": number | null,
+      "currentQuantity": number | null,
+      "message": "string | null",
+      "acknowledgedBy": {
+        "id": "string",
+        "name": "string | null",
+        "username": "string | null"
+      } | null,
+      "acknowledgedAt": "ISO 8601 datetime string | null",
+      "createdAt": "ISO 8601 datetime string"
+    }
+  ],
+  "pagination": {
+    "limit": number,
+    "offset": number,
+    "total": number,
+    "hasMore": boolean
+  }
+}
+
+GET /api/alerts/:alertId
+Purpose
+- Return one persisted alert record in the current organization.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - alert:manage
+Path parameters
+- alertId: string, required
+Request body
+- None
+Success response 200
+{
+  "alert": {
+    "id": "string",
+    "ownerId": "string",
+    "productId": "string | null",
+    "productName": "string | null",
+    "productSku": "string | null",
+    "triggeredByMovementId": "string | null",
+    "type": "low_stock" | "critical_stock" | "custom",
+    "status": "active" | "acknowledged" | "resolved",
+    "thresholdQuantity": number | null,
+    "currentQuantity": number | null,
+    "message": "string | null",
+    "acknowledgedBy": {
+      "id": "string",
+      "name": "string | null",
+      "username": "string | null"
+    } | null,
+    "acknowledgedAt": "ISO 8601 datetime string | null",
+    "createdAt": "ISO 8601 datetime string"
+  }
+}
+
+POST /api/alerts
+Purpose
+- Create a persisted alert record.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - alert:manage
+Request body
+Exact request schema
+{
+  "productId": "string UUID | null",
+  "alertDefinitionId": "string UUID | null"?,
+  "triggeredByMovementId": "string UUID | null"?,
+  "type": "low_stock" | "critical_stock" | "custom",
+  "status": "active" | "acknowledged" | "resolved"?,
+  "thresholdQuantity": number | null?,
+  "currentQuantity": number | null?,
+  "message": "string | null"?
+}
+Field rules
+- productId: required unless this is a custom alert linked to an alert definition
+- alertDefinitionId: optional, but may only be used when type = "custom"
+- type: required
+- status: optional, defaults to active
+- thresholdQuantity: optional integer, min 0, nullable
+- currentQuantity: optional integer, min 0, nullable
+- message: optional trimmed string, max length 500, nullable
+Success response 201
+{
+  "alert": {
+    "id": "string",
+    "ownerId": "string",
+    "productId": "string | null",
+    "productName": "string | null",
+    "productSku": "string | null",
+    "triggeredByMovementId": "string | null",
+    "alertDefinitionId": "string | null",
+    "type": "low_stock" | "critical_stock" | "custom",
+    "status": "active" | "acknowledged" | "resolved",
+    "thresholdQuantity": number | null,
+    "currentQuantity": number | null,
+    "message": "string | null",
+    "acknowledgedBy": null,
+    "acknowledgedAt": null,
+    "createdAt": "ISO 8601 datetime string"
+  }
+}
+
+PATCH /api/alerts/:alertId
+Purpose
+- Update an existing persisted alert record.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - alert:manage
+Path parameters
+- alertId: string, required
+Request body
+Exact request schema
+{
+  "status": "active" | "acknowledged" | "resolved"?,
+  "thresholdQuantity": number | null?,
+  "currentQuantity": number | null?,
+  "message": "string | null"?
+}
+Field rules
+- At least one field is required.
+- When status is acknowledged, backend stamps the current authenticated account as acknowledgedBy.
+Success response 200
+{
+  "alert": {
+    "id": "string",
+    "ownerId": "string",
+    "productId": "string",
+    "productName": "string",
+    "productSku": "string | null",
+    "triggeredByMovementId": "string | null",
+    "type": "low_stock" | "critical_stock" | "custom",
+    "status": "active" | "acknowledged" | "resolved",
+    "thresholdQuantity": number | null,
+    "currentQuantity": number | null,
+    "message": "string | null",
+    "acknowledgedBy": {
+      "id": "string",
+      "name": "string | null",
+      "username": "string | null"
+    } | null,
+    "acknowledgedAt": "ISO 8601 datetime string | null",
+    "createdAt": "ISO 8601 datetime string"
+  }
+}
+
+DELETE /api/alerts/:alertId
+Purpose
+- Delete a persisted alert record from the current organization.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - alert:manage
+Path parameters
+- alertId: string, required
+Request body
+- None
+Success response 200
+{
+  "alert": {
+    "id": "string",
+    "ownerId": "string",
+    "productId": "string",
+    "productName": "string",
+    "productSku": "string | null",
+    "triggeredByMovementId": "string | null",
+    "type": "low_stock" | "critical_stock" | "custom",
+    "status": "active" | "acknowledged" | "resolved",
+    "thresholdQuantity": number | null,
+    "currentQuantity": number | null,
+    "message": "string | null",
+    "acknowledgedBy": {
+      "id": "string",
+      "name": "string | null",
+      "username": "string | null"
+    } | null,
+    "acknowledgedAt": "ISO 8601 datetime string | null",
+    "createdAt": "ISO 8601 datetime string"
+  }
+}
+
+GET /api/metrics/inventory/overview
+Purpose
+- Return org-scoped inventory overview metrics.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - inventory:read
+Query parameters
+- q: string, optional
+- productId: string UUID, optional
+- categoryIds: comma-separated UUID list, optional
+- stockState: "critical" | "low" | "healthy", optional
+- criticalThreshold: number, optional
+- lowThreshold: number, optional
+Path parameters
+- None
+Request body
+- None
+Success response 200
+{
+  "overview": {
+    "totalSku": number,
+    "totalQuantity": number,
+    "totalValue": number,
+    "criticalCount": number,
+    "lowCount": number
+  }
+}
+Notes
+- Metrics are derived from current products and inventory rows for the authenticated organization.
+- These filters are intended to mirror dashboard table filters so summary cards can stay in sync.
+- When threshold query params are omitted, backend defaults to the current organization's stored stock thresholds.
+
+GET /api/metrics/inventory/movement-trend
+Purpose
+- Return inbound and outbound movement quantities bucketed by day.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - stockmovement:read
+Query parameters
+- days: number, optional, default 7, min 1, max 30
+- q: string, optional
+- productId: string UUID, optional
+- categoryIds: comma-separated UUID list, optional
+- stockState: "critical" | "low" | "healthy", optional
+- criticalThreshold: number, optional
+- lowThreshold: number, optional
+Path parameters
+- None
+Request body
+- None
+Success response 200
+{
+  "days": number,
+  "trend": [
+    {
+      "bucket": "YYYY-MM-DD",
+      "inbound": number,
+      "outbound": number
+    }
+  ]
+}
+Notes
+- Response includes zero-value day buckets when there is no movement activity.
+- Filters apply before the aggregate is calculated.
+- When threshold query params are omitted, backend defaults to the current organization's stored stock thresholds.
+
+GET /api/metrics/inventory/movement-summary
+Purpose
+- Return movement totals for the current organization or a single product.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - stockmovement:read
+Query parameters
+- q: string, optional
+- productId: string UUID, optional
+- categoryIds: comma-separated UUID list, optional
+- stockState: "critical" | "low" | "healthy", optional
+- days: number, optional, min 1, max 365
+- criticalThreshold: number, optional
+- lowThreshold: number, optional
+Path parameters
+- None
+Request body
+- None
+Success response 200
+{
+  "scope": {
+    "productId": "string | null",
+    "days": "number | null"
+  },
+  "summary": {
+    "movementCount": number,
+    "stockInQuantity": number,
+    "stockOutQuantity": number,
+    "transferInQuantity": number,
+    "transferOutQuantity": number,
+    "adjustmentIncreaseQuantity": number,
+    "adjustmentDecreaseQuantity": number,
+    "inboundQuantity": number,
+    "outboundQuantity": number,
+    "netQuantity": number
+  }
+}
+Notes
+- When productId is omitted, totals are org-wide.
+- When days is omitted, totals are lifetime totals for the current scope.
+- Filters apply before the movement totals are calculated.
+- When threshold query params are omitted, backend defaults to the current organization's stored stock thresholds.
+
+GET /api/metrics/inventory/category-breakdown
+Purpose
+- Return inventory value grouped by category.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - inventory:read
+Query parameters
+- top: number, optional, default 5, min 1, max 10
+- q: string, optional
+- productId: string UUID, optional
+- categoryIds: comma-separated UUID list, optional
+- stockState: "critical" | "low" | "healthy", optional
+- criticalThreshold: number, optional
+- lowThreshold: number, optional
+Path parameters
+- None
+Request body
+- None
+Success response 200
+{
+  "categories": [
+    {
+      "categoryId": "string | null",
+      "categoryName": "string",
+      "skuCount": number,
+      "totalQuantity": number,
+      "totalValue": number,
+      "share": number
+    }
+  ]
+}
+Notes
+- Backend folds remainder categories into an "Other" entry when the top limit is exceeded.
+- Filters apply before the category aggregation runs.
+- When threshold query params are omitted, backend defaults to the current organization's stored stock thresholds.
+
+POST /api/metrics/definitions
+Purpose
+- Create a custom metric definition for the current organization.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - organization:manage
+Query parameters
+- None
+Path parameters
+- None
+Request body
+Exact request schema
+{
+  "key": "string",
+  "name": "string",
+  "description": "string | null, optional",
+  "scope": "organization" | "product" | "category",
+  "format": "number" | "percent" | "currency" | "quantity",
+  "definition": {
+    "kind": "number" | "metric" | "add" | "sub" | "mul" | "div"
+  }
+}
+Field rules
+- key: required, snake_case, max length 64
+- name: required, trimmed string, max length 128
+- description: optional, max length 500
+- scope: optional, default organization
+- format: optional, default number
+- definition: required validated expression tree over the backend base metric catalog
+Success response 201
+{
+  "metric": {
+    "id": "string",
+    "orgId": "string",
+    "key": "string",
+    "name": "string",
+    "description": "string | null",
+    "scope": "organization" | "product" | "category",
+    "format": "number" | "percent" | "currency" | "quantity",
+    "definition": {},
+    "isActive": true,
+    "createdBy": "string",
+    "createdAt": "ISO 8601 datetime string",
+    "updatedAt": "ISO 8601 datetime string"
+  }
+}
+Notes
+- The backend validates both the expression structure and allowed base metric references.
+- Current implementation supports binary arithmetic nodes and literal/metric leaf nodes only.
+
+GET /api/categories
+Purpose
+- List categories in current authenticated organization.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - category:read
+Query parameters
+- None
+Path parameters
+- None
+Request body
+- None
+Success response 200
+{
+  "categories": [
+    {
+      "id": "string",
+      "orgId": "string",
+      "name": "string",
+      "parentId": "string | null",
+      "createdAt": "ISO 8601 datetime string"
+    }
+  ]
+}
+Notes
+- Categories are org-scoped.
+- Not paginated.
+
+GET /api/categories/:categoryId
+Purpose
+- Return one category in current authenticated organization.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - category:read
+Query parameters
+- None
+Path parameters
+- categoryId: string UUID, required
+Request body
+- None
+Success response 200
+{
+  "category": {
+    "id": "string",
+    "orgId": "string",
+    "name": "string",
+    "parentId": "string | null",
+    "createdAt": "ISO 8601 datetime string"
+  }
+}
+Notes
+- Category lookup is restricted to caller organization.
+
+POST /api/categories
+Purpose
+- Create a category in current authenticated organization.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - category:create
+Query parameters
+- None
+Path parameters
+- None
+Request body
+Exact request schema
+{
+  "name": "string",
+  "parentId": "string UUID | null"?
+}
+Field rules
+- name: required, trimmed string, min length 1
+- parentId: optional, nullable, UUID when not null
+- orgId: server-derived, read-only
+Success response 201
+{
+  "category": {
+    "id": "string",
+    "orgId": "string",
+    "name": "string",
+    "parentId": "string | null",
+    "createdAt": "ISO 8601 datetime string"
+  }
+}
+Notes
+- If parentId is provided, parent category must exist in the same organization.
+
+PUT /api/categories/:categoryId
+Purpose
+- Update a category in current authenticated organization.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - category:update
+Query parameters
+- None
+Path parameters
+- categoryId: string UUID, required
+Request body
+Exact request schema
+{
+  "name": "string",
+  "parentId": "string UUID | null"?
+}
+Field rules
+- name: required, trimmed string, min length 1
+- parentId: optional, nullable, UUID when not null
+Success response 200
+{
+  "category": {
+    "id": "string",
+    "orgId": "string",
+    "name": "string",
+    "parentId": "string | null",
+    "createdAt": "ISO 8601 datetime string"
+  }
+}
+Notes
+- categoryId must belong to the caller organization.
+- parentId must belong to the caller organization when provided.
+- A category cannot be its own parent.
+
+DELETE /api/categories/:categoryId
+Purpose
+- Delete a category in current authenticated organization.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - category:delete
+Query parameters
+- None
+Path parameters
+- categoryId: string UUID, required
+Request body
+- None
+Success response 200
+{
+  "category": {
+    "id": "string",
+    "orgId": "string",
+    "name": "string",
+    "parentId": "string | null",
+    "createdAt": "ISO 8601 datetime string"
+  }
+}
+Notes
+- Delete can be blocked by product references or child-category references.
+
+POST /api/organizations
+Purpose
+- Create a new organization and switch current account into it as owner.
+Auth required
+- Yes
+Additional authorization
+- Requires base permission:
+  - organization:create
+Query parameters
+- None
+Path parameters
+- None
+Request body
+Exact request schema
+{
+  "name": "string"
+}
+Field rules
+- name: required, trimmed string, min length 1
+- orgId: server-derived, read-only
+- roleId: server-derived, read-only
+Success response 201
+{
+  "organization": {
+    "id": "string",
+    "name": "string | null"
+  }
+}
+Notes
+- Backend creates organization.
+- Backend creates owner role and assigns owner permissions.
+- Backend updates current authenticated account to the new organization and owner role.
+
+PATCH /api/organizations/:organizationId
+Purpose
+- Update current organization name and stock threshold settings.
+Auth required
+- Yes
+Additional authorization
+- Requires any of:
+  - organization:update
+  - organization:manage
+Query parameters
+- None
+Path parameters
+- organizationId: string UUID, required
+Request body
+Exact request schema
+{
+  "name": "string, optional",
+  "criticalStockThreshold": "number, optional",
+  "lowStockThreshold": "number, optional"
+}
+Field rules
+- At least one field must be provided.
+- name: optional, trimmed string, min length 1
+- criticalStockThreshold: optional integer, min 0
+- lowStockThreshold: optional integer, min 0, must be greater than or equal to criticalStockThreshold when both are provided
+Success response 200
+{
+  "organization": {
+    "id": "string",
+    "name": "string | null",
+    "criticalStockThreshold": number,
+    "lowStockThreshold": number
+  }
+}
+Notes
+- organizationId must match the caller's current organization.
+- Backend rejects updates to organizations outside current account context.
+
+DELETE /api/organizations/:organizationId
+Purpose
+- Delete current organization.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - organization:manage
+Query parameters
+- None
+Path parameters
+- organizationId: string UUID, required
+Request body
+- None
+Success response 200
+{
+  "organization": {
+    "id": "string",
+    "name": "string | null"
+  }
+}
+Notes
+- organizationId must match the caller's current organization.
+- Deletion can fail if related records block the delete.
+- Current controller returns 400 on delete failure.
+- Service logic identifies foreign key block conditions for blocked deletes, but there is no distinct documented delete-specific error envelope.</pre>
+
+GET /api/products
+Purpose
+- List products in current authenticated organization with filters, sorting, and pagination.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - product:read
+Query parameters
+- limit: number, optional, default 50, max 200
+- offset: number, optional, default 0, min 0
+- q: string, optional
+- sku: string, optional
+- productCategoryId: string UUID, optional
+- createdFrom: string datetime, optional
+- createdTo: string datetime, optional
+- updatedFrom: string datetime, optional
+- updatedTo: string datetime, optional
+- hasInventory: boolean, optional
+- minQuantity: integer, optional, minimum 0
+- maxQuantity: integer, optional, minimum 0
+- minUnitCost: number, optional, minimum 0
+- maxUnitCost: number, optional, minimum 0
+- sortBy: string enum, optional, default createdAt
+  - allowed values: name | sku | createdAt | updatedAt | quantity | unitCost
+- sortOrder: string enum, optional, default desc
+  - allowed values: asc | desc
+Path parameters
+- None
+Request body
+- None
+Success response 200
+{
+  "products": [
+    {
+      "id": "string",
+      "ownerId": "string | null",
+      "productCategoryId": "string | null",
+      "name": "string",
+      "description": "string | null",
+      "sku": "string | null",
+      "imageUrl": "string | null",
+      "unitCost": number,
+      "createdAt": "ISO 8601 datetime string",
+      "updatedAt": "ISO 8601 datetime string"
+    }
+  ],
+  "pagination": {
+    "limit": number,
+    "offset": number,
+    "total": number,
+    "hasMore": boolean
+  }
+}
+Notes
+- ownerId is derived from authenticated organization scope.
+- Client must not send ownerId as a filter. This route does not accept ownerId.
+- createdFrom, createdTo, updatedFrom, and updatedTo should be sent as ISO 8601 UTC datetimes.
+- hasInventory=true filters to products with current quantity greater than 0.
+- hasInventory=false filters to products with current quantity equal to 0.
+- minQuantity and maxQuantity apply to current inventory quantity using 0 when no inventory row exists.
+- minUnitCost and maxUnitCost apply to product unit cost.
+- quantity sorting uses current inventory quantity using 0 when no inventory row exists.
+
+GET /api/products/:productId
+Purpose
+- Return a single product within current authenticated organization.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - product:read
+Query parameters
+- None
+Path parameters
+- productId: string, required
+Request body
+- None
+Success response 200
+{
+  "product": {
+    "id": "string",
+    "ownerId": "string | null",
+    "productCategoryId": "string | null",
+    "name": "string",
+    "description": "string | null",
+    "sku": "string | null",
+    "imageUrl": "string | null",
+    "unitCost": number,
+    "createdAt": "ISO 8601 datetime string",
+    "updatedAt": "ISO 8601 datetime string"
+  }
+}
+Notes
+- Current controller checks non-empty string.
+- Product is scoped by authenticated organization ownerId internally.
+
+POST /api/products
+Purpose
+- Create a product in current authenticated organization.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - product:create
+Query parameters
+- None
+Path parameters
+- None
+Request body
+Exact request schema
+{
+  "name": "string",
+  "description": "string | null"?,
+  "sku": "string | null"?,
+  "imageUrl": "string URL | null"?,
+  "productCategoryId": "string UUID | null"?,
+  "unitCost": number
+}
+Field rules
+- name: required, min length 1
+- description: optional, nullable, max length 2000
+- sku: optional, nullable, max length 128
+- imageUrl: optional, nullable, absolute URL when not null
+- productCategoryId: optional, nullable, UUID when not null
+- unitCost: required, JSON number, minimum 0
+- ownerId: server-derived, read-only
+- orgId: server-derived, read-only
+Success response 201
+{
+  "product": {
+    "id": "string",
+    "ownerId": "string | null",
+    "productCategoryId": "string | null",
+    "name": "string",
+    "description": "string | null",
+    "sku": "string | null",
+    "imageUrl": "string | null",
+    "unitCost": number,
+    "createdAt": "ISO 8601 datetime string",
+    "updatedAt": "ISO 8601 datetime string"
+  }
+}
+Notes
+- Backend trims name and sku.
+- Backend injects organization-scoped ownerId.
+
+PUT /api/products/:productId
+Purpose
+- Replace editable product fields for a product in current authenticated organization.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - product:update
+Query parameters
+- None
+Path parameters
+- productId: string, required
+Request body
+Exact request schema
+{
+  "name": "string",
+  "description": "string | null"?,
+  "sku": "string | null"?,
+  "imageUrl": "string URL | null"?,
+  "productCategoryId": "string UUID | null"?,
+  "unitCost": number
+}
+Field rules
+- name: required, min length 1
+- description: optional, nullable, max length 2000
+- sku: optional, nullable, max length 128
+- imageUrl: optional, nullable, absolute URL when not null
+- productCategoryId: optional, nullable, UUID when not null
+- unitCost: required, JSON number, minimum 0
+- ownerId: server-derived, read-only
+Success response 200
+{
+  "product": {
+    "id": "string",
+    "ownerId": "string | null",
+    "productCategoryId": "string | null",
+    "name": "string",
+    "description": "string | null",
+    "sku": "string | null",
+    "unitCost": number,
+    "createdAt": "ISO 8601 datetime string",
+    "updatedAt": "ISO 8601 datetime string"
+  }
+}
+Notes
+- Current implementation treats update as full required-name payload, not partial patch.
+- Product is updated only within caller organization scope.
+
+GET /api/inventory
+Purpose
+- List inventory summaries for current authenticated organization.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - inventory:read
+Query parameters
+- None
+Path parameters
+- None
+Request body
+- None
+Success response 200
+{
+  "inventory": [
+    {
+      "productId": "string",
+      "ownerId": "string | null",
+      "productName": "string",
+      "sku": "string | null",
+      "unitCost": number,
+      "quantity": number,
+      "valuation": number,
+      "updatedAt": "ISO 8601 datetime string"
+    }
+  ]
+}
+Notes
+- Not paginated.
+- ownerId is backend-derived organization scope.
+- valuation is derived by backend as quantity * unitCost.
+
+GET /api/inventory/summary
+Purpose
+- Alias of GET /api/inventory using the same controller and response shape.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - inventory:read
+Query parameters
+- None
+Path parameters
+- None
+Request body
+- None
+Success response 200
+{
+  "inventory": [
+    {
+      "productId": "string",
+      "ownerId": "string | null",
+      "productName": "string",
+      "sku": "string | null",
+      "unitCost": number,
+      "quantity": number,
+      "valuation": number,
+      "updatedAt": "ISO 8601 datetime string"
+    }
+  ]
+}
+Notes
+- Current implementation is the same as GET /api/inventory.
+
+GET /api/inventory/:productId
+Purpose
+- Return inventory summary for one product in current authenticated organization.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - inventory:read
+Query parameters
+- None
+Path parameters
+- productId: string, required
+Request body
+- None
+Success response 200
+{
+  "inventory": {
+    "productId": "string",
+    "ownerId": "string | null",
+    "productName": "string",
+    "sku": "string | null",
+    "unitCost": number,
+    "quantity": number,
+    "valuation": number,
+    "updatedAt": "ISO 8601 datetime string"
+  }
+}
+Notes
+- Current controller accepts non-empty string productId.
+- Product existence is checked within organization scope.
+
+POST /api/inventory
+Purpose
+- Create the one inventory balance row for a product.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - inventory:update
+Query parameters
+- None
+Path parameters
+- None
+Request body
+Exact request schema
+{
+  "productId": "string UUID",
+  "quantity": number
+}
+Field rules
+- productId: required
+- quantity: required integer, minimum 0
+- ownerId: server-derived, read-only
+Success response 201
+{
+  "inventory": {
+    "productId": "string",
+    "ownerId": "string | null",
+    "productName": "string",
+    "sku": "string | null",
+    "unitCost": number,
+    "quantity": number,
+    "valuation": number,
+    "updatedAt": "ISO 8601 datetime string"
+  }
+}
+Notes
+- Fails with 409 if inventory row already exists for that product.
+- Product must exist in current organization scope.
+
+PATCH /api/inventory/:productId
+Purpose
+- Update stored inventory quantity for a product.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - inventory:update
+Query parameters
+- None
+Path parameters
+- productId: string UUID, required
+Request body
+Exact request schema
+{
+  "quantity": number
+}
+Field rules
+- quantity: required integer, minimum 0
+Success response 200
+{
+  "inventory": {
+    "productId": "string",
+    "ownerId": "string | null",
+    "productName": "string",
+    "sku": "string | null",
+    "unitCost": number,
+    "quantity": number,
+    "valuation": number,
+    "updatedAt": "ISO 8601 datetime string"
+  }
+}
+Notes
+- Product must exist in current organization scope.
+- Inventory row must already exist.
+
+DELETE /api/inventory/:productId
+Purpose
+- Delete inventory balance row for a product.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - inventory:update
+Query parameters
+- None
+Path parameters
+- productId: string UUID, required
+Request body
+- None
+Success response 200
+{
+  "inventory": {
+    "productId": "string",
+    "ownerId": "string | null",
+    "productName": "string",
+    "sku": "string | null",
+    "unitCost": number,
+    "quantity": number,
+    "valuation": number,
+    "updatedAt": "ISO 8601 datetime string"
+  }
+}
+Notes
+- Response returns deleted inventory snapshot.
+- Product must exist in current organization scope.
+- Inventory row must already exist.
+
+POST /api/inventory/adjustments
+Purpose
+- Record a manual inventory adjustment and let backend derive the corresponding ADJUSTMENT_* movement type.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - inventory:update
+Query parameters
+- None
+Path parameters
+- None
+Request body
+Exact request schema
+{
+  "productId": "string UUID",
+  "direction": "increase" | "decrease",
+  "quantity": number,
+  "reason": "string"
+}
+Field rules
+- productId: required
+- direction: required
+- quantity: required positive integer
+- reason: required, trimmed string, min length 1, max length 500
+- actorId: server-derived, read-only
+- type: server-derived, read-only
+Success response 201
+{
+  "movement": {
+    "id": "string",
+    "ownerId": "string | null",
+    "actorId": "string | null",
+    "productId": "string | null",
+    "productName": "string",
+    "type": "ADJUSTMENT_INCREASE" | "ADJUSTMENT_DECREASE",
+    "quantity": number,
+    "reason": "string | null",
+    "createdAt": "ISO 8601 datetime string"
+  },
+  "inventory": {
+    "productId": "string",
+    "ownerId": "string | null",
+    "productName": "string",
+    "sku": "string | null",
+    "quantity": number,
+    "updatedAt": "ISO 8601 datetime string"
+  }
+}
+Notes
+- This is the preferred endpoint for inventory adjustment and reconciliation screens.
+- Client sends direction, not raw ADJUSTMENT_* movement types.
+- Backend derives actorId and adjustment type.
+- Adjustment reasons are required and persisted on the movement record.
+
+GET /api/inventory/movements
+Purpose
+- List stock movements for current authenticated organization with filters and pagination.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - stockmovement:read
+Query parameters
+- limit: number, optional, default 50, max 200
+- offset: number, optional, default 0, min 0
+- productId: string UUID, optional
+- actorId: string UUID, optional
+- type: MovementType, optional
+- createdFrom: string datetime, optional
+- createdTo: string datetime, optional
+Path parameters
+- None
+Request body
+- None
+Success response 200
+{
+  "movements": [
+    {
+      "id": "string",
+      "ownerId": "string | null",
+      "actorId": "string | null",
+      "productId": "string | null",
+      "productName": "string",
+      "type": "STOCK_IN" | "STOCK_OUT" | "TRANSFER_IN" | "TRANSFER_OUT" | "ADJUSTMENT_INCREASE" | "ADJUSTMENT_DECREASE",
+      "quantity": number,
+      "reason": "string | null",
+      "createdAt": "ISO 8601 datetime string"
+    }
+  ],
+  "pagination": {
+    "limit": number,
+    "offset": number,
+    "total": number,
+    "hasMore": boolean
+  }
+}
+Notes
+- ownerId scope is backend-derived from authenticated account.
+- actorId is allowed here only as a filter.
+- createdFrom and createdTo should be sent as ISO 8601 UTC datetimes.
+
+POST /api/inventory/movements
+Purpose
+- Record a stock movement and update inventory quantity atomically.
+Auth required
+- Yes
+Additional authorization
+- Requires:
+  - stockmovement:create
+Query parameters
+- None
+Path parameters
+- None
+Request body
+Exact request schema
+{
+  "productId": "string UUID",
+  "type": "STOCK_IN" | "STOCK_OUT" | "TRANSFER_IN" | "TRANSFER_OUT" | "ADJUSTMENT_INCREASE" | "ADJUSTMENT_DECREASE",
+  "quantity": number,
+  "reason": "string"?
+}
+Field rules
+- productId: required
+- type: required MovementType
+- quantity: required positive integer
+- reason: optional, trimmed string, min length 1, max length 500
+- actorId: server-derived, read-only
+- ownerId: server-derived, read-only
+Success response 201
+{
+  "movement": {
+    "id": "string",
+    "ownerId": "string | null",
+    "actorId": "string | null",
+    "productId": "string | null",
+    "productName": "string",
+    "type": "STOCK_IN" | "STOCK_OUT" | "TRANSFER_IN" | "TRANSFER_OUT" | "ADJUSTMENT_INCREASE" | "ADJUSTMENT_DECREASE",
+    "quantity": number,
+    "reason": "string | null",
+    "createdAt": "ISO 8601 datetime string"
+  },
+  "inventory": {
+    "productId": "string",
+    "ownerId": "string | null",
+    "productName": "string",
+    "sku": "string | null",
+    "quantity": number,
+    "updatedAt": "ISO 8601 datetime string"
+  }
+}
+Notes
+- Backend derives actorId from authenticated backend account context.
+- Client must not send actorId.
+- Prefer POST /api/inventory/adjustments for manual inventory adjustment UIs.
+- Generic movement reasons are optional.
+- If inventory row does not exist, current implementation can create it during movement processing.
+- Negative resulting stock is rejected with conflict behavior.
+</pre>
+      </article>
+
+      <article class="doc-section" id="implementation-guidance">
+        <h3>Implementation Guidance For AI Agents</h3>
+        <pre>- Do not treat /agents as an API endpoint.
+- Do not call non-/api documentation routes as data endpoints.
+- Use hosted origin + /api for live API calls.
+- Use Cognito accessToken for Authorization: Bearer &lt;accessToken&gt; on protected routes.
+- Use POST /api/auth/cognito/resolve to establish local backend account state.
+- Treat backend-derived fields as read-only.
+- Do not send ownerId, orgId, or actorId on documented write routes.
+- Do not guess extra request fields beyond documented or inferred minimal schema.
+- Prefer conservative client implementations when schema is incomplete.
+- If a response shape is partially specified, parse only documented keys.
+- Do not assume pagination on endpoints not documented as paginated.
+- For createdFrom and createdTo, send ISO 8601 UTC datetime strings.
+- For JSON numeric fields such as quantity and unitCost, send JSON numbers, not strings.
+- Use /api/products and /api/inventory/movements pagination object exactly as documented.</pre>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

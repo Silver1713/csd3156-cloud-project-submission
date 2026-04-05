@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Users API Documentation</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <p class="eyebrow">Documentation</p>
+      <h1>User Routes</h1>
+      <p class="lede">These pages document the live user endpoints mounted under <code>/api/users</code>.</p>
+      <nav class="doc-nav">
+        <a href="/">All Docs</a>
+        <a href="#users-me-patch">PATCH /users/me</a>
+      </nav>
+    </section>
+
+    <section class="card">
+      <article class="doc-section" id="users-me-patch">
+        <h3><code>PATCH /api/users/me</code></h3>
+        <p class="meta">Updates the authenticated user's profile fields. Self-update is implicit for authenticated users.</p>
+        <pre>Request
+PATCH /api/users/me
+Authorization: Bearer &lt;access-token&gt;
+Content-Type: application/json
+
+{
+  "name": "Jane Owner",
+  "profileUrl": "https://example.com/avatar.png"
+}
+
+Response 200
+{
+  "user": {
+    "id": "uuid",
+    "orgId": "uuid",
+    "profileUrl": "https://example.com/avatar.png",
+    "name": "Jane Owner",
+    "email": "owner@example.com",
+    "username": "owner_user",
+    "authProvider": "cognito",
+    "cognitoSub": "sub-123",
+    "roleId": "uuid",
+    "createdAt": "2026-03-28T00:00:00.000Z",
+    "updatedAt": "2026-03-29T12:00:00.000Z"
+  }
+}</pre>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

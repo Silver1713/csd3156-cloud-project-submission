@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Categories API Documentation</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <p class="eyebrow">Documentation</p>
+      <h1>Category Routes</h1>
+      <p class="lede">These pages document the live category endpoints mounted under <code>/api/categories</code>.</p>
+      <nav class="doc-nav">
+        <a href="/">All Docs</a>
+        <a href="#categories-list">List</a>
+        <a href="#categories-get">Get</a>
+        <a href="#categories-create">Create</a>
+        <a href="#categories-update">Update</a>
+        <a href="#categories-delete">Delete</a>
+      </nav>
+    </section>
+
+    <section class="card">
+      <article class="doc-section" id="categories-list">
+        <h3><code>GET /api/categories</code></h3>
+        <p class="meta">Lists categories in the authenticated account's organization.</p>
+        <pre>Response 200
+{
+  "categories": [
+    {
+      "id": "uuid",
+      "orgId": "uuid",
+      "name": "General",
+      "parentId": null,
+      "createdAt": "2026-03-28T00:00:00.000Z"
+    }
+  ]
+}</pre>
+      </article>
+
+      <article class="doc-section" id="categories-get">
+        <h3><code>GET /api/categories/:categoryId</code></h3>
+        <p class="meta">Returns a single category in the authenticated account's organization.</p>
+        <pre>Response 200
+{
+  "category": {
+    "id": "uuid",
+    "orgId": "uuid",
+    "name": "General",
+    "parentId": null,
+    "createdAt": "2026-03-28T00:00:00.000Z"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="categories-create">
+        <h3><code>POST /api/categories</code></h3>
+        <p class="meta">Creates a category in the authenticated account's organization.</p>
+        <pre>Request
+{
+  "name": "General",
+  "parentId": null
+}
+
+Response 201
+{
+  "category": {
+    "id": "uuid",
+    "orgId": "uuid",
+    "name": "General",
+    "parentId": null,
+    "createdAt": "2026-03-28T00:00:00.000Z"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="categories-update">
+        <h3><code>PUT /api/categories/:categoryId</code></h3>
+        <p class="meta">Updates a category in the authenticated account's organization.</p>
+        <pre>Request
+{
+  "name": "Electronics",
+  "parentId": "uuid"
+}
+
+Response 200
+{
+  "category": {
+    "id": "uuid",
+    "orgId": "uuid",
+    "name": "Electronics",
+    "parentId": "uuid",
+    "createdAt": "2026-03-28T00:00:00.000Z"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="categories-delete">
+        <h3><code>DELETE /api/categories/:categoryId</code></h3>
+        <p class="meta">Deletes a category when no products or child categories still reference it.</p>
+        <pre>Response 200
+{
+  "category": {
+    "id": "uuid",
+    "orgId": "uuid",
+    "name": "General",
+    "parentId": null,
+    "createdAt": "2026-03-28T00:00:00.000Z"
+  }
+}</pre>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

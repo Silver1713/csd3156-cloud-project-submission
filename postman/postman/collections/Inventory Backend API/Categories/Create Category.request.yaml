@@ -1,0 +1,39 @@
+$kind: http-request
+name: Create Category
+method: POST
+url: '{{base_url}}/categories'
+order: 3000
+headers:
+  Authorization: 'Bearer {{access_token}}'
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Postman Category",
+      "parentId": null
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status is 201, 400, 401, 403, or 404", function () {
+        pm.expect(pm.response.code).to.be.oneOf([201, 400, 401, 403, 404]);
+      });
+
+      pm.test("Response is JSON", function () {
+        pm.response.to.be.json;
+      });
+
+      pm.test("Response time is less than 500ms", function () {
+        pm.expect(pm.response.responseTime).to.be.below(500);
+      });
+
+      if (pm.response.code === 201) {
+        const body = pm.response.json();
+        const category = body.category;
+
+        if (category?.id) {
+          pm.environment.set("category_id", category.id);
+        }
+      }

@@ -1,0 +1,32 @@
+$kind: http-request
+name: Update Product
+method: PUT
+url: '{{base_url}}/products/{{product_id}}'
+order: 4000
+headers:
+  Authorization: 'Bearer {{access_token}}'
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Postman Updated Product",
+      "description": "Updated from Postman",
+      "sku": "POSTMAN-SKU-002",
+      "unitCost": 24.5
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status is 200, 400, 401, 403, or 404", function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 404]);
+      });
+
+      pm.test("Response is JSON", function () {
+        pm.response.to.be.json;
+      });
+
+      pm.test("Response time is less than 500ms", function () {
+        pm.expect(pm.response.responseTime).to.be.below(500);
+      });

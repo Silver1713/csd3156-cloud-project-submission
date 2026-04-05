@@ -1,0 +1,138 @@
+import { Router } from "express";
+
+import { requireAuthenticatedAccount } from "../../middleware/cognito-auth.middleware.js";
+import {
+  createOrganizationRoleController,
+  createOrganizationController,
+  deleteOrganizationController,
+  getCurrentOrganizationController,
+  getOrganizationMemberCountController,
+  getOrganizationPermissionCatalogController,
+  joinOrganizationController,
+  listOrganizationRolesController,
+  listOrganizationMembersController,
+  regenerateOrganizationJoinKeyController,
+  removeOrganizationMemberController,
+  updateOrganizationMemberController,
+  updateOrganizationController,
+} from "./controllers/organizations.controller.js";
+import {
+  requireAnyBasePermission,
+  requireAnyOrganizationPermission,
+} from "./middleware/organization-auth.middleware.js";
+
+const organizationsRouter = Router();
+
+organizationsRouter.get(
+  "/me",
+  requireAuthenticatedAccount,
+  requireAnyOrganizationPermission([
+    "organization:read",
+    "organization:update",
+    "organization:manage",
+    "organization:members:read",
+    "organization:members:manage",
+  ]),
+  getCurrentOrganizationController,
+);
+organizationsRouter.get(
+  "/me/members",
+  requireAuthenticatedAccount,
+  requireAnyOrganizationPermission([
+    "organization:members:read",
+    "organization:members:manage",
+    "organization:manage",
+  ]),
+  listOrganizationMembersController,
+);
+organizationsRouter.get(
+  "/me/members/count",
+  requireAuthenticatedAccount,
+  requireAnyOrganizationPermission([
+    "organization:members:read",
+    "organization:members:manage",
+    "organization:manage",
+  ]),
+  getOrganizationMemberCountController,
+);
+organizationsRouter.get(
+  "/me/roles",
+  requireAuthenticatedAccount,
+  requireAnyOrganizationPermission([
+    "organization:members:read",
+    "organization:members:manage",
+    "organization:manage",
+  ]),
+  listOrganizationRolesController,
+);
+organizationsRouter.get(
+  "/me/permissions",
+  requireAuthenticatedAccount,
+  requireAnyOrganizationPermission([
+    "organization:members:manage",
+    "organization:manage",
+  ]),
+  getOrganizationPermissionCatalogController,
+);
+organizationsRouter.post(
+  "/me/join-key/regenerate",
+  requireAuthenticatedAccount,
+  requireAnyOrganizationPermission([
+    "organization:members:invite",
+    "organization:manage",
+  ]),
+  regenerateOrganizationJoinKeyController,
+);
+organizationsRouter.post(
+  "/me/join",
+  requireAuthenticatedAccount,
+  joinOrganizationController,
+);
+organizationsRouter.post(
+  "/me/roles",
+  requireAuthenticatedAccount,
+  requireAnyOrganizationPermission(["organization:manage"]),
+  createOrganizationRoleController,
+);
+organizationsRouter.patch(
+  "/me/members/:accountId",
+  requireAuthenticatedAccount,
+  requireAnyOrganizationPermission([
+    "organization:members:manage",
+    "organization:manage",
+  ]),
+  updateOrganizationMemberController,
+);
+organizationsRouter.delete(
+  "/me/members/:accountId",
+  requireAuthenticatedAccount,
+  requireAnyOrganizationPermission([
+    "organization:read",
+    "organization:members:manage",
+    "organization:manage",
+  ]),
+  removeOrganizationMemberController,
+);
+organizationsRouter.post(
+  "/",
+  requireAuthenticatedAccount,
+  requireAnyBasePermission(["organization:create"]),
+  createOrganizationController,
+);
+organizationsRouter.patch(
+  "/:organizationId",
+  requireAuthenticatedAccount,
+  requireAnyOrganizationPermission([
+    "organization:update",
+    "organization:manage",
+  ]),
+  updateOrganizationController,
+);
+organizationsRouter.delete(
+  "/:organizationId",
+  requireAuthenticatedAccount,
+  requireAnyOrganizationPermission(["organization:manage"]),
+  deleteOrganizationController,
+);
+
+export { organizationsRouter };

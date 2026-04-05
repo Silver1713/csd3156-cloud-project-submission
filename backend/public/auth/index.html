@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auth API Documentation</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <p class="eyebrow">Documentation</p>
+      <h1>Auth Routes</h1>
+      <p class="lede">
+        These pages document the live auth endpoints mounted under <code>/api/auth</code>.
+      </p>
+      <nav class="doc-nav">
+        <a href="/">All Docs</a>
+        <a href="#auth-accounts">Accounts</a>
+        <a href="#auth-permissions">Permissions</a>
+        <a href="#auth-cognito-status">Cognito Status</a>
+        <a href="#auth-cognito-refresh">Refresh</a>
+        <a href="#auth-cognito-verify">Verify</a>
+        <a href="#auth-cognito-resolve">Resolve</a>
+      </nav>
+    </section>
+
+    <section class="card">
+      <h2>Endpoints</h2>
+
+      <article class="doc-section" id="auth-accounts">
+        <h3><code>GET /api/auth/accounts</code></h3>
+        <p class="meta">Protected account listing for the current authenticated session.</p>
+        <pre>Request
+GET /api/auth/accounts
+Authorization: Bearer &lt;access-token&gt;
+
+Response 200
+{
+  "accounts": [
+    {
+      "id": "uuid",
+      "orgId": "uuid",
+      "username": "owner_user",
+      "email": "owner@example.com",
+      "authProvider": "cognito",
+      "cognitoSub": "sub-123",
+      "roleId": "uuid"
+    }
+  ]
+}</pre>
+      </article>
+
+      <article class="doc-section" id="auth-permissions">
+        <h3><code>GET /api/auth/permissions</code></h3>
+        <p class="meta">Protected canonical list of backend permission keys with stable integer ids.</p>
+        <pre>Request
+GET /api/auth/permissions
+Authorization: Bearer &lt;access-token&gt;
+
+Response 200
+{
+  "permissions": [
+    {
+      "id": 1,
+      "key": "auth:delete"
+    },
+    {
+      "id": 2,
+      "key": "auth:delete_self"
+    }
+  ],
+  "permissionMap": {
+    "auth:delete": 1,
+    "auth:delete_self": 2
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="auth-cognito-status">
+        <h3><code>GET /api/auth/cognito</code></h3>
+        <p class="meta">Returns backend Cognito configuration status for the direct client auth flow.</p>
+        <pre>Request
+GET /api/auth/cognito
+
+Response 200
+{
+  "provider": "cognito",
+  "configured": true,
+  "message": "Cognito is configured for client-side login with backend JWT verification."
+}</pre>
+      </article>
+
+      <article class="doc-section" id="auth-cognito-refresh">
+        <h3><code>POST /api/auth/cognito/refresh</code></h3>
+        <p class="meta">Refreshes Cognito access and ID tokens using a refresh token.</p>
+        <pre>Request
+POST /api/auth/cognito/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "&lt;cognito-refresh-token&gt;"
+}
+
+Response 200
+{
+  "provider": "cognito",
+  "accessToken": "...",
+  "idToken": "...",
+  "refreshToken": "...",
+  "expiresIn": 3600,
+  "tokenType": "Bearer"
+}</pre>
+      </article>
+
+      <article class="doc-section" id="auth-cognito-verify">
+        <h3><code>POST /api/auth/cognito/verify</code></h3>
+        <p class="meta">Verifies a Cognito access token without provisioning local account state.</p>
+        <pre>Request
+POST /api/auth/cognito/verify
+Content-Type: application/json
+
+{
+  "accessToken": "&lt;cognito-access-token&gt;"
+}
+
+Response 200
+{
+  "provider": "cognito",
+  "verified": true,
+  "account": null,
+  "claims": {
+    "sub": "sub-123",
+    "tokenUse": "access",
+    "username": "silver1713"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="auth-cognito-resolve">
+        <h3><code>POST /api/auth/cognito/resolve</code></h3>
+        <p class="meta">Verifies Cognito tokens and resolves or provisions the local backend account session.</p>
+        <pre>Request
+POST /api/auth/cognito/resolve
+Content-Type: application/json
+
+{
+  "accessToken": "&lt;cognito-access-token&gt;",
+  "idToken": "&lt;cognito-id-token&gt;"
+}
+
+Response 200
+{
+  "provider": "cognito",
+  "verified": true,
+  "provisioned": true,
+  "account": {
+    "id": "uuid",
+    "orgId": "uuid",
+    "username": "silver1713",
+    "email": "user@example.com",
+    "authProvider": "cognito",
+    "cognitoSub": "sub-123",
+    "roleId": "uuid"
+  },
+  "claims": {
+    "sub": "sub-123",
+    "tokenUse": "access",
+    "username": "silver1713"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="auth-cognito-login">
+        <h3><code>POST /api/auth/cognito/login</code></h3>
+        <p class="meta">Deprecated compatibility endpoint for backend-mediated Cognito login.</p>
+        <pre>Request
+POST /api/auth/cognito/login
+Content-Type: application/json
+
+{
+  "username": "silver1713",
+  "password": "example-password"
+}
+
+Response 200
+{
+  "provider": "cognito",
+  "account": null,
+  "accessToken": "...",
+  "idToken": "...",
+  "refreshToken": "..."
+}</pre>
+      </article>
+
+      <article class="doc-section" id="auth-cognito-register">
+        <h3><code>POST /api/auth/cognito/register</code></h3>
+        <p class="meta">Deprecated compatibility endpoint for backend-mediated Cognito registration.</p>
+        <pre>Request
+POST /api/auth/cognito/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "username": "silver1713",
+  "password": "example-password",
+  "orgId": "uuid",
+  "roleId": "uuid"
+}
+
+Response 201
+{
+  "provider": "cognito",
+  "account": {
+    "id": "uuid",
+    "orgId": "uuid",
+    "username": "silver1713",
+    "email": "user@example.com",
+    "authProvider": "cognito",
+    "cognitoSub": "sub-123",
+    "roleId": "uuid"
+  },
+  "userSub": "sub-123",
+  "userConfirmed": false
+}</pre>
+      </article>
+
+      <article class="doc-section" id="auth-backend-login">
+        <h3><code>POST /api/auth/backend/login</code></h3>
+        <p class="meta">Deprecated local backend login flow.</p>
+        <pre>Request
+POST /api/auth/backend/login
+Content-Type: application/json
+
+{
+  "username": "local_user",
+  "password": "example-password"
+}
+
+Response 200
+{
+  "accessToken": "...",
+  "account": {
+    "id": "uuid",
+    "orgId": "uuid",
+    "username": "local_user",
+    "email": "local@example.com",
+    "authProvider": "backend",
+    "cognitoSub": null,
+    "roleId": "uuid"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="auth-backend-register">
+        <h3><code>POST /api/auth/backend/register</code></h3>
+        <p class="meta">Deprecated local backend registration flow.</p>
+        <pre>Request
+POST /api/auth/backend/register
+Content-Type: application/json
+
+{
+  "email": "local@example.com",
+  "username": "local_user",
+  "password": "example-password",
+  "orgId": "uuid",
+  "roleId": "uuid"
+}
+
+Response 201
+{
+  "account": {
+    "id": "uuid",
+    "orgId": "uuid",
+    "username": "local_user",
+    "email": "local@example.com",
+    "authProvider": "backend",
+    "cognitoSub": null,
+    "roleId": "uuid"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="auth-login-alias">
+        <h3><code>POST /api/auth/login</code></h3>
+        <p class="meta">Deprecated alias for <code>/api/auth/backend/login</code>.</p>
+        <pre>Request
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "username": "local_user",
+  "password": "example-password"
+}
+
+Response 200
+{
+  "accessToken": "...",
+  "account": {
+    "id": "uuid",
+    "orgId": "uuid",
+    "username": "local_user",
+    "email": "local@example.com",
+    "authProvider": "backend",
+    "cognitoSub": null,
+    "roleId": "uuid"
+  }
+}</pre>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

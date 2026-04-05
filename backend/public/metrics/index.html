@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Metrics API Documentation</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <p class="eyebrow">Documentation</p>
+      <h1>Metrics Routes</h1>
+      <p class="lede">These pages document the live metric catalog, metric definition, preview, and inventory aggregate endpoints mounted under <code>/api/metrics</code>.</p>
+      <nav class="doc-nav">
+        <a href="/">All Docs</a>
+        <a href="#metrics-catalog">Catalog</a>
+        <a href="#metrics-definitions-list">Definition List</a>
+        <a href="#metrics-definitions-get">Definition By Id</a>
+        <a href="#metrics-definitions-create">Create Definition</a>
+        <a href="#metrics-definitions-update">Update Definition</a>
+        <a href="#metrics-definitions-delete">Delete Definition</a>
+        <a href="#metrics-definitions-preview">Preview Definition</a>
+        <a href="#metrics-overview">Inventory Overview</a>
+        <a href="#metrics-movement-trend">Movement Trend</a>
+        <a href="#metrics-movement-summary">Movement Summary</a>
+        <a href="#metrics-category-breakdown">Category Breakdown</a>
+      </nav>
+    </section>
+
+    <section class="card">
+      <article class="doc-section" id="metrics-catalog">
+        <h3><code>GET /api/metrics/catalog</code></h3>
+        <p class="meta">Returns the backend-authoritative base metric catalog available to custom metric builders and alert builders.</p>
+        <pre>Request
+GET /api/metrics/catalog
+
+Response 200
+{
+  "metrics": [
+    {
+      "key": "totalSku",
+      "name": "Total SKU",
+      "description": "Total active products in scope",
+      "scope": "organization",
+      "format": "number"
+    },
+    {
+      "key": "outboundQuantity",
+      "name": "Outbound Quantity",
+      "description": "Total outbound quantity in scope",
+      "scope": "organization",
+      "format": "quantity"
+    }
+  ]
+}</pre>
+      </article>
+
+      <article class="doc-section" id="metrics-definitions-list">
+        <h3><code>GET /api/metrics/definitions</code></h3>
+        <p class="meta">Lists custom metric definitions for the authenticated account's current organization.</p>
+        <pre>Request
+GET /api/metrics/definitions
+
+Response 200
+{
+  "metrics": [
+    {
+      "id": "uuid",
+      "orgId": "uuid",
+      "key": "outflow_ratio",
+      "name": "Outflow Ratio",
+      "description": "Share of total flow that is outbound",
+      "scope": "organization",
+      "format": "percent",
+      "definition": {
+        "kind": "div",
+        "left": {
+          "kind": "metric",
+          "key": "outboundQuantity"
+        },
+        "right": {
+          "kind": "metric",
+          "key": "inboundQuantity"
+        }
+      },
+      "isActive": true,
+      "createdBy": "uuid",
+      "createdAt": "2026-04-04T00:00:00.000Z",
+      "updatedAt": "2026-04-04T00:00:00.000Z"
+    }
+  ]
+}</pre>
+      </article>
+
+      <article class="doc-section" id="metrics-definitions-get">
+        <h3><code>GET /api/metrics/definitions/:metricId</code></h3>
+        <p class="meta">Returns one metric definition in the current organization scope.</p>
+        <pre>Request
+GET /api/metrics/definitions/11111111-1111-1111-1111-111111111111
+
+Response 200
+{
+  "metric": {
+    "id": "uuid",
+    "orgId": "uuid",
+    "key": "outflow_ratio",
+    "name": "Outflow Ratio",
+    "description": "Share of total flow that is outbound",
+    "scope": "organization",
+    "format": "percent",
+    "definition": {},
+    "isActive": true,
+    "createdBy": "uuid",
+    "createdAt": "2026-04-04T00:00:00.000Z",
+    "updatedAt": "2026-04-04T00:00:00.000Z"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="metrics-definitions-create">
+        <h3><code>POST /api/metrics/definitions</code></h3>
+        <p class="meta">Creates a custom metric definition from validated JSON AST.</p>
+        <pre>Request
+POST /api/metrics/definitions
+Content-Type: application/json
+
+{
+  "key": "outflow_ratio",
+  "name": "Outflow Ratio",
+  "description": "Share of total flow that is outbound",
+  "scope": "organization",
+  "format": "percent",
+  "definition": {
+    "kind": "div",
+    "left": {
+      "kind": "metric",
+      "key": "outboundQuantity"
+    },
+    "right": {
+      "kind": "metric",
+      "key": "inboundQuantity"
+    }
+  }
+}
+
+Response 201
+{
+  "metric": {
+    "id": "uuid",
+    "orgId": "uuid",
+    "key": "outflow_ratio",
+    "name": "Outflow Ratio",
+    "description": "Share of total flow that is outbound",
+    "scope": "organization",
+    "format": "percent",
+    "definition": {},
+    "isActive": true,
+    "createdBy": "uuid",
+    "createdAt": "2026-04-04T00:00:00.000Z",
+    "updatedAt": "2026-04-04T00:00:00.000Z"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="metrics-definitions-update">
+        <h3><code>PATCH /api/metrics/definitions/:metricId</code></h3>
+        <p class="meta">Updates part or all of an existing metric definition.</p>
+        <pre>Request
+PATCH /api/metrics/definitions/11111111-1111-1111-1111-111111111111
+Content-Type: application/json
+
+{
+  "name": "Outbound Flow Ratio",
+  "isActive": false
+}
+
+Response 200
+{
+  "metric": {
+    "id": "uuid",
+    "orgId": "uuid",
+    "key": "outflow_ratio",
+    "name": "Outbound Flow Ratio",
+    "description": "Share of total flow that is outbound",
+    "scope": "organization",
+    "format": "percent",
+    "definition": {},
+    "isActive": false,
+    "createdBy": "uuid",
+    "createdAt": "2026-04-04T00:00:00.000Z",
+    "updatedAt": "2026-04-04T01:00:00.000Z"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="metrics-definitions-delete">
+        <h3><code>DELETE /api/metrics/definitions/:metricId</code></h3>
+        <p class="meta">Deletes a custom metric definition in the current organization scope.</p>
+        <pre>Request
+DELETE /api/metrics/definitions/11111111-1111-1111-1111-111111111111
+
+Response 200
+{
+  "metric": {
+    "id": "uuid",
+    "orgId": "uuid",
+    "key": "outflow_ratio",
+    "name": "Outflow Ratio",
+    "description": "Share of total flow that is outbound",
+    "scope": "organization",
+    "format": "percent",
+    "definition": {},
+    "isActive": true,
+    "createdBy": "uuid",
+    "createdAt": "2026-04-04T00:00:00.000Z",
+    "updatedAt": "2026-04-04T00:00:00.000Z"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="metrics-definitions-preview">
+        <h3><code>POST /api/metrics/definitions/preview</code></h3>
+        <p class="meta">Evaluates a metric definition against live base metric values without persisting it.</p>
+        <pre>Request
+POST /api/metrics/definitions/preview
+Content-Type: application/json
+
+{
+  "definition": {
+    "kind": "div",
+    "left": {
+      "kind": "metric",
+      "key": "outboundQuantity"
+    },
+    "right": {
+      "kind": "metric",
+      "key": "inboundQuantity"
+    }
+  }
+}
+
+Response 200
+{
+  "preview": {
+    "status": "ready",
+    "value": 0.08
+  },
+  "baseMetrics": {
+    "outboundQuantity": 8,
+    "inboundQuantity": 100
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="metrics-overview">
+        <h3><code>GET /api/metrics/inventory/overview</code></h3>
+        <p class="meta">Returns inventory overview card metrics with optional filter and threshold query params.</p>
+        <pre>Request
+GET /api/metrics/inventory/overview?stockState=critical&criticalThreshold=5&lowThreshold=15
+
+Response 200
+{
+  "overview": {
+    "totalSku": 12,
+    "totalQuantity": 542,
+    "totalValue": 10934.25,
+    "criticalCount": 2,
+    "lowCount": 3
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="metrics-movement-trend">
+        <h3><code>GET /api/metrics/inventory/movement-trend</code></h3>
+        <p class="meta">Returns grouped daily inbound and outbound movement series.</p>
+        <pre>Request
+GET /api/metrics/inventory/movement-trend?days=30&categoryIds=uuid,uuid
+
+Response 200
+{
+  "days": 30,
+  "trend": [
+    {
+      "bucket": "2026-04-01",
+      "inbound": 55,
+      "outbound": 13
+    }
+  ]
+}</pre>
+      </article>
+
+      <article class="doc-section" id="metrics-movement-summary">
+        <h3><code>GET /api/metrics/inventory/movement-summary</code></h3>
+        <p class="meta">Returns aggregate movement totals for the current organization or a filtered product/category scope.</p>
+        <pre>Request
+GET /api/metrics/inventory/movement-summary?productId=uuid&days=30
+
+Response 200
+{
+  "scope": {
+    "productId": "uuid",
+    "days": 30
+  },
+  "summary": {
+    "movementCount": 9,
+    "stockInQuantity": 100,
+    "stockOutQuantity": 50,
+    "transferInQuantity": 12,
+    "transferOutQuantity": 6,
+    "adjustmentIncreaseQuantity": 4,
+    "adjustmentDecreaseQuantity": 2,
+    "inboundQuantity": 116,
+    "outboundQuantity": 58,
+    "netQuantity": 58
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="metrics-category-breakdown">
+        <h3><code>GET /api/metrics/inventory/category-breakdown</code></h3>
+        <p class="meta">Returns a grouped category value distribution with optional top-N and filter query params.</p>
+        <pre>Request
+GET /api/metrics/inventory/category-breakdown?top=3
+
+Response 200
+{
+  "categories": [
+    {
+      "categoryId": "uuid",
+      "categoryName": "Technology",
+      "skuCount": 2,
+      "totalQuantity": 900,
+      "totalValue": 1890000,
+      "share": 54.01
+    }
+  ]
+}</pre>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

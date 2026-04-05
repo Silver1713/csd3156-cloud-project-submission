@@ -1,0 +1,51 @@
+# Add services here
+services:
+  # Postgres SQL
+  db:
+    build: ./database
+    container_name: inventory_db
+  #image: inventory_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: inventory
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d inventory"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: inventory_backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: inventory
+      DB_USER: postgres
+      DB_PASSWORD: password
+    ports:
+      - "3000:3000"
+
+  client:
+    build: ./client
+    container_name: inventory_client
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+
+volumes:
+  db_data:

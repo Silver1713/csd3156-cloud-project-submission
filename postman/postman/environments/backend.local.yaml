@@ -1,0 +1,46 @@
+name: backend.local
+values:
+  - key: base_url
+    value: 'https://inventory-api.jiahaoyeo.com/api'
+    type: default
+    enabled: true
+  - key: backend_api_key
+    value: 'LqklZd29Dfx59ViMCEcx0ogW9AIvrEGWv7EgDaOW2nw='
+    type: secret
+    enabled: true
+  - key: access_token
+    value: ''
+    type: secret
+    enabled: true
+  - key: id_token
+    value: ''
+    type: secret
+    enabled: true
+  - key: backend_username
+    value: 'test_user'
+    type: default
+    enabled: true
+  - key: backend_email
+    value: 'test@example.com'
+    type: default
+    enabled: true
+  - key: backend_password
+    value: 'password123'
+    type: secret
+    enabled: true
+  - key: org_id
+    value: '00000000-0000-0000-0000-000000000000'
+    type: default
+    enabled: true
+  - key: role_id
+    value: ''
+    type: default
+    enabled: true
+  - key: product_id
+    value: ''
+    type: default
+    enabled: true
+  - key: category_id
+    value: ''
+    type: default
+    enabled: true

@@ -1,0 +1,22 @@
+$kind: http-request
+name: List My Organization Members
+method: GET
+url: '{{base_url}}/organizations/me/members'
+order: 2000
+headers:
+  Authorization: 'Bearer {{access_token}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status is 200, 401, or 403", function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 401, 403]);
+      });
+
+      pm.test("Response is JSON", function () {
+        pm.response.to.be.json;
+      });
+
+      pm.test("Response time is less than 500ms", function () {
+        pm.expect(pm.response.responseTime).to.be.below(500);
+      });

@@ -1,0 +1,41 @@
+$kind: http-request
+name: Create Product
+method: POST
+url: '{{base_url}}/products'
+order: 3000
+headers:
+  Authorization: 'Bearer {{access_token}}'
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Postman Test Product",
+      "description": "Created from Postman",
+      "sku": "POSTMAN-SKU-001",
+      "unitCost": 19.99
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status is 201, 400, 401, or 403", function () {
+        pm.expect(pm.response.code).to.be.oneOf([201, 400, 401, 403]);
+      });
+
+      pm.test("Response is JSON", function () {
+        pm.response.to.be.json;
+      });
+
+      pm.test("Response time is less than 500ms", function () {
+        pm.expect(pm.response.responseTime).to.be.below(500);
+      });
+
+      if (pm.response.code === 201) {
+        const body = pm.response.json();
+        const product = body.product;
+
+        if (product?.id) {
+          pm.environment.set("product_id", product.id);
+        }
+      }

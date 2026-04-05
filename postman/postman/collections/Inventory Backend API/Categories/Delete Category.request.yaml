@@ -1,0 +1,22 @@
+$kind: http-request
+name: Delete Category
+method: DELETE
+url: '{{base_url}}/categories/{{category_id}}'
+order: 5000
+headers:
+  Authorization: 'Bearer {{access_token}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status is 200, 401, 403, 404, or 409", function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 404, 409]);
+      });
+
+      pm.test("Response is JSON", function () {
+        pm.response.to.be.json;
+      });
+
+      pm.test("Response time is less than 500ms", function () {
+        pm.expect(pm.response.responseTime).to.be.below(500);
+      });

@@ -1,0 +1,3 @@
+$kind: collection
+name: Health
+description: Health check endpoints for the Inventory Backend API

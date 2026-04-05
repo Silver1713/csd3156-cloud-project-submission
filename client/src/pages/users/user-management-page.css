@@ -1,0 +1,166 @@
+.user-management-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.user-management-page__search {
+  min-width: 220px;
+  border: 1px solid rgba(209, 217, 228, 0.92);
+  border-radius: 14px;
+  padding: 0.8rem 0.95rem;
+  background: rgba(255, 255, 255, 0.92);
+  color: #1b2a4b;
+}
+
+.user-management-page__summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.user-management-page__summary-card {
+  border: 1px solid rgba(224, 230, 240, 0.92);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 255, 0.96));
+  box-shadow: 0 20px 44px rgba(30, 52, 109, 0.08);
+}
+
+.user-management-page__summary-card {
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.user-management-page__summary-card span {
+  color: #6e7d99;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.user-management-page__summary-card strong {
+  color: #1b2a4b;
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.user-management-page__role-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 220px;
+}
+
+.user-management-page__role-cell select,
+.user-management-page__modal input {
+  width: 100%;
+  border: 1px solid rgba(209, 217, 228, 0.92);
+  border-radius: 14px;
+  padding: 0.8rem 0.95rem;
+  background: rgba(255, 255, 255, 0.92);
+  color: #1b2a4b;
+}
+
+.user-management-page__role-note {
+  color: #6e7d99;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.user-management-page__transfer-btn {
+  border-color: rgba(217, 78, 72, 0.22);
+  background: rgba(255, 241, 240, 0.96);
+  color: #b93832;
+}
+
+.user-management-page__transfer-btn:hover:not(:disabled) {
+  border-color: rgba(217, 78, 72, 0.34);
+  background: rgba(255, 233, 231, 0.98);
+}
+
+.user-management-page__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.user-management-page__roles-table td:last-child,
+.user-management-page__roles-table th:last-child {
+  text-align: right;
+}
+
+.user-management-page__role-actions {
+  justify-content: flex-end;
+  opacity: 1;
+}
+
+.user-management-page__permission-list,
+.user-management-page__permission-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.user-management-page__permission-picker--scrollable {
+  max-height: 320px;
+  overflow-y: auto;
+  align-content: flex-start;
+  padding: 4px 2px 4px 0;
+}
+
+.user-management-page__permission-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(209, 217, 228, 0.92);
+  border-radius: 999px;
+  padding: 0.55rem 0.9rem;
+  background: rgba(255, 255, 255, 0.92);
+  color: #44516a;
+  font-size: 0.88rem;
+}
+
+.user-management-page__modal {
+  max-width: 860px;
+}
+
+.user-management-page__role-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px 16px;
+  margin-bottom: 20px;
+  color: #6e7d99;
+}
+
+.user-management-page__role-meta strong {
+  color: #1b2a4b;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.user-management-page__error {
+  margin: 0;
+  color: #c23a2b;
+  font-weight: 600;
+}
+
+.user-management-page__helper {
+  margin: 8px 0 0;
+  color: #6e7d99;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.user-management-page__empty-cell {
+  text-align: center;
+  color: #64748b;
+  padding: 48px 24px;
+}
+
+@media (max-width: 1080px) {
+  .user-management-page__summary-grid {
+    grid-template-columns: 1fr;
+  }
+}

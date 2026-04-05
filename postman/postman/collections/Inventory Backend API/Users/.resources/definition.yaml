@@ -1,0 +1,3 @@
+$kind: collection
+name: Users
+description: User profile management endpoints

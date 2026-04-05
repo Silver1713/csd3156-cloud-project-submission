@@ -1,0 +1,3 @@
+$kind: collection
+name: Inventory Backend API
+description: API tests for the Inventory Management System backend

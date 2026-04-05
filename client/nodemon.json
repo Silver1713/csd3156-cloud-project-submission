@@ -1,0 +1,5 @@
+{
+  "watch": ["src", "public", "index.html", "vite.config.ts"],
+  "ext": "ts,tsx,css,html",
+  "exec": "vite"
+}

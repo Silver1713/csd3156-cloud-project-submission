@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Products API Documentation</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <p class="eyebrow">Documentation</p>
+      <h1>Product Routes</h1>
+      <p class="lede">These pages document the live product endpoints mounted under <code>/api/products</code>.</p>
+      <nav class="doc-nav">
+        <a href="/">All Docs</a>
+        <a href="#products-list">List</a>
+        <a href="#products-get">Get</a>
+        <a href="#products-image-upload">Image Upload</a>
+        <a href="#products-create">Create</a>
+        <a href="#products-update">Update</a>
+        <a href="#products-delete">Delete</a>
+      </nav>
+    </section>
+
+    <section class="card">
+      <article class="doc-section" id="products-list">
+        <h3><code>GET /api/products</code></h3>
+        <p class="meta">Lists products in the authenticated account's organization with optional filters, sorting, and pagination.</p>
+        <pre>Request
+GET /api/products?limit=25&offset=0&q=widget&sku=WIDGET-A&productCategoryId=uuid&hasInventory=true&minQuantity=5&minUnitCost=10&maxUnitCost=50&sortBy=unitCost&sortOrder=asc
+
+Response 200
+{
+  "products": [
+    {
+      "id": "uuid",
+      "ownerId": "uuid",
+      "productCategoryId": "uuid",
+      "name": "Widget A",
+      "description": "Main warehouse item",
+      "sku": "WIDGET-A",
+      "unitCost": 19.99,
+      "createdAt": "2026-03-28T00:00:00.000Z",
+      "updatedAt": "2026-03-29T12:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "limit": 25,
+    "offset": 0,
+    "total": 1,
+    "hasMore": false
+  }
+}
+
+Supported filters
+- limit (default 50, max 200)
+- offset (default 0)
+- q
+- sku
+- productCategoryId
+- createdFrom
+- createdTo
+- updatedFrom
+- updatedTo
+- hasInventory (true or false)
+- minQuantity
+- maxQuantity
+- minUnitCost
+- maxUnitCost
+- sortBy (name, sku, createdAt, updatedAt, quantity, unitCost)
+- sortOrder (asc, desc)</pre>
+      </article>
+
+      <article class="doc-section" id="products-get">
+        <h3><code>GET /api/products/:productId</code></h3>
+        <p class="meta">Returns a single product by its identifier.</p>
+        <pre>Request
+GET /api/products/4cf7f6ef-1111-2222-3333-444444444444
+
+Response 200
+{
+  "product": {
+    "id": "4cf7f6ef-1111-2222-3333-444444444444",
+    "ownerId": "uuid",
+    "productCategoryId": "uuid",
+    "name": "Widget A",
+    "description": "Main warehouse item",
+    "sku": "WIDGET-A",
+    "unitCost": 19.99,
+    "createdAt": "2026-03-28T00:00:00.000Z",
+    "updatedAt": "2026-03-29T12:00:00.000Z"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="products-image-upload">
+        <h3><code>POST /api/uploads/products/presign</code></h3>
+        <p class="meta">Creates a presigned S3 upload URL for direct product image uploads. The client uploads to S3 first, then stores the returned <code>fileUrl</code> on the product as <code>imageUrl</code>.</p>
+        <pre>Request
+POST /api/uploads/products/presign
+Content-Type: application/json
+
+{
+  "filename": "widget-a.jpg",
+  "contentType": "image/jpeg"
+}
+
+Response 200
+{
+  "uploadUrl": "https://bucket.s3.amazonaws.com/...",
+  "fileUrl": "https://bucket.s3.amazonaws.com/products/org-id/123-widget-a.jpg",
+  "objectKey": "products/org-id/123-widget-a.jpg",
+  "expiresIn": 900
+}
+
+Supported content types
+- image/jpeg
+- image/png
+- image/webp
+- image/gif</pre>
+      </article>
+
+      <article class="doc-section" id="products-create">
+        <h3><code>POST /api/products</code></h3>
+        <p class="meta">Creates a new product.</p>
+        <pre>Request
+POST /api/products
+Content-Type: application/json
+
+{
+  "name": "Widget A",
+  "description": "Main warehouse item",
+  "sku": "WIDGET-A",
+  "imageUrl": "https://bucket.s3.amazonaws.com/products/org-id/widget-a.jpg",
+  "productCategoryId": "uuid",
+  "unitCost": 19.99
+}
+
+Response 201
+{
+  "product": {
+    "id": "uuid",
+    "ownerId": "uuid",
+    "productCategoryId": "uuid",
+    "name": "Widget A",
+    "description": "Main warehouse item",
+    "sku": "WIDGET-A",
+    "imageUrl": "https://bucket.s3.amazonaws.com/products/org-id/widget-a.jpg",
+    "unitCost": 19.99,
+    "createdAt": "2026-03-28T00:00:00.000Z",
+    "updatedAt": "2026-03-28T00:00:00.000Z"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="products-update">
+        <h3><code>PUT /api/products/:productId</code></h3>
+        <p class="meta">Updates an existing product record.</p>
+        <pre>Request
+PUT /api/products/4cf7f6ef-1111-2222-3333-444444444444
+Content-Type: application/json
+
+{
+  "name": "Widget A Prime",
+  "description": "Updated item",
+  "sku": "WIDGET-A-PRIME",
+  "imageUrl": "https://bucket.s3.amazonaws.com/products/org-id/widget-a-prime.jpg",
+  "productCategoryId": null,
+  "unitCost": 24.50
+}
+
+Response 200
+{
+  "product": {
+    "id": "4cf7f6ef-1111-2222-3333-444444444444",
+    "ownerId": "uuid",
+    "productCategoryId": null,
+    "name": "Widget A Prime",
+    "description": "Updated item",
+    "sku": "WIDGET-A-PRIME",
+    "unitCost": 24.5,
+    "createdAt": "2026-03-28T00:00:00.000Z",
+    "updatedAt": "2026-03-29T12:00:00.000Z"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="products-delete">
+        <h3><code>DELETE /api/products/:productId</code></h3>
+        <p class="meta">Deletes a product in the current organization when the caller has product delete permission.</p>
+        <pre>Request
+DELETE /api/products/4cf7f6ef-1111-2222-3333-444444444444
+
+Response 200
+{
+  "product": {
+    "id": "4cf7f6ef-1111-2222-3333-444444444444",
+    "ownerId": "uuid",
+    "productCategoryId": null,
+    "name": "Widget A Prime",
+    "description": "Updated item",
+    "sku": "WIDGET-A-PRIME",
+    "imageUrl": "https://bucket.s3.amazonaws.com/products/org-id/widget-a-prime.jpg",
+    "unitCost": 24.5,
+    "createdAt": "2026-03-28T00:00:00.000Z",
+    "updatedAt": "2026-03-29T12:00:00.000Z"
+  }
+}</pre>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

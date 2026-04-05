@@ -1,0 +1,3 @@
+$kind: collection
+name: Inventory
+description: Inventory listing and management endpoints

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventory API Documentation</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <p class="eyebrow">Documentation</p>
+      <h1>Inventory Routes</h1>
+      <p class="lede">These pages document the live inventory endpoints mounted under <code>/api/inventory</code>.</p>
+      <nav class="doc-nav">
+        <a href="/">All Docs</a>
+        <a href="#inventory-types">Movement Types</a>
+        <a href="#inventory-list">Inventory List</a>
+        <a href="#inventory-summary">Summary</a>
+        <a href="#inventory-by-product">Inventory By Product</a>
+        <a href="#inventory-create">Create Inventory</a>
+        <a href="#inventory-update">Update Inventory</a>
+        <a href="#inventory-delete">Delete Inventory</a>
+        <a href="#inventory-adjustments-create">Record Adjustment</a>
+        <a href="#inventory-movements-list">Movement List</a>
+        <a href="#inventory-movements-create">Record Movement</a>
+      </nav>
+    </section>
+
+    <section class="card">
+      <article class="doc-section" id="inventory-types">
+        <h3><code>GET /api/inventory/movements/types</code></h3>
+        <p class="meta">Returns the stock movement type catalog used by the inventory operation and movement logging interfaces.</p>
+        <pre>Request
+GET /api/inventory/movements/types
+
+Response 200
+{
+  "types": [
+    {
+      "key": "STOCK_IN",
+      "label": "Receive Stock"
+    },
+    {
+      "key": "TRANSFER_OUT",
+      "label": "Transfer Out"
+    }
+  ]
+}</pre>
+      </article>
+
+      <article class="doc-section" id="inventory-list">
+        <h3><code>GET /api/inventory</code></h3>
+        <p class="meta">Lists inventory summaries for products in the authenticated account's organization.</p>
+        <pre>Request
+GET /api/inventory
+
+Response 200
+{
+  "inventory": [
+    {
+      "productId": "uuid",
+      "ownerId": "uuid",
+      "productName": "Widget A",
+      "sku": "WIDGET-A",
+      "unitCost": 19.99,
+      "quantity": 25,
+      "valuation": 499.75,
+      "updatedAt": "2026-03-29T12:00:00.000Z"
+    }
+  ]
+}</pre>
+      </article>
+
+      <article class="doc-section" id="inventory-summary">
+        <h3><code>GET /api/inventory/summary</code></h3>
+        <p class="meta">Returns the current stock snapshot for products in the authenticated account's organization.</p>
+        <pre>Request
+GET /api/inventory/summary
+
+Response 200
+{
+  "inventory": [
+    {
+      "productId": "uuid",
+      "ownerId": "uuid",
+      "productName": "Widget A",
+      "sku": "WIDGET-A",
+      "unitCost": 19.99,
+      "quantity": 25,
+      "valuation": 499.75,
+      "updatedAt": "2026-03-29T12:00:00.000Z"
+    }
+  ]
+}</pre>
+      </article>
+
+      <article class="doc-section" id="inventory-by-product">
+        <h3><code>GET /api/inventory/:productId</code></h3>
+        <p class="meta">Returns the inventory summary for one product in the authenticated account's organization.</p>
+        <pre>Request
+GET /api/inventory/11111111-1111-1111-1111-111111111111
+
+Response 200
+{
+  "inventory": {
+    "productId": "uuid",
+    "ownerId": "uuid",
+    "productName": "Widget A",
+    "sku": "WIDGET-A",
+    "unitCost": 19.99,
+    "quantity": 25,
+    "valuation": 499.75,
+    "updatedAt": "2026-03-29T12:00:00.000Z"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="inventory-create">
+        <h3><code>POST /api/inventory</code></h3>
+        <p class="meta">Creates the 1:1 inventory balance row for a product.</p>
+        <pre>Request
+POST /api/inventory
+Content-Type: application/json
+
+{
+  "productId": "uuid",
+  "quantity": 25
+}
+
+Response 201
+{
+  "inventory": {
+    "productId": "uuid",
+    "ownerId": "uuid",
+    "productName": "Widget A",
+    "sku": "WIDGET-A",
+    "unitCost": 19.99,
+    "quantity": 25,
+    "valuation": 499.75,
+    "updatedAt": "2026-03-29T12:00:00.000Z"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="inventory-update">
+        <h3><code>PATCH /api/inventory/:productId</code></h3>
+        <p class="meta">Updates the stored inventory quantity for a product.</p>
+        <pre>Request
+PATCH /api/inventory/11111111-1111-1111-1111-111111111111
+Content-Type: application/json
+
+{
+  "quantity": 30
+}
+
+Response 200
+{
+  "inventory": {
+    "productId": "uuid",
+    "ownerId": "uuid",
+    "productName": "Widget A",
+    "sku": "WIDGET-A",
+    "unitCost": 19.99,
+    "quantity": 30,
+    "valuation": 599.7,
+    "updatedAt": "2026-03-29T12:00:00.000Z"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="inventory-delete">
+        <h3><code>DELETE /api/inventory/:productId</code></h3>
+        <p class="meta">Deletes the stored inventory balance row for a product.</p>
+        <pre>Request
+DELETE /api/inventory/11111111-1111-1111-1111-111111111111
+
+Response 200
+{
+  "inventory": {
+    "productId": "uuid",
+    "ownerId": "uuid",
+    "productName": "Widget A",
+    "sku": "WIDGET-A",
+    "unitCost": 19.99,
+    "quantity": 25,
+    "valuation": 499.75,
+    "updatedAt": "2026-03-29T12:00:00.000Z"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="inventory-adjustments-create">
+        <h3><code>POST /api/inventory/adjustments</code></h3>
+        <p class="meta">Records a manual inventory adjustment. The backend derives the correct <code>ADJUSTMENT_*</code> movement type from the provided direction.</p>
+        <pre>Request
+POST /api/inventory/adjustments
+Content-Type: application/json
+
+{
+  "productId": "uuid",
+  "direction": "increase",
+  "quantity": 10,
+  "reason": "Cycle count reconciliation"
+}
+
+Response 201
+{
+  "movement": {
+    "id": "uuid",
+    "ownerId": "uuid",
+    "actorId": "uuid",
+    "productId": "uuid",
+    "productName": "Widget A",
+    "type": "ADJUSTMENT_INCREASE",
+    "quantity": 10,
+    "reason": "Cycle count reconciliation",
+    "createdAt": "2026-03-29T12:00:00.000Z"
+  },
+  "inventory": {
+    "productId": "uuid",
+    "ownerId": "uuid",
+    "productName": "Widget A",
+    "sku": "WIDGET-A",
+    "unitCost": 19.99,
+    "quantity": 25,
+    "valuation": 499.75,
+    "updatedAt": "2026-03-29T12:00:00.000Z"
+  }
+}
+
+Notes
+- Use this route for inventory adjustment and reconciliation screens.
+- Send direction, not raw ADJUSTMENT_* movement types.
+- The backend derives actorId from the authenticated account.
+- The backend requires and persists a human-entered adjustment reason.</pre>
+      </article>
+
+      <article class="doc-section" id="inventory-movements-list">
+        <h3><code>GET /api/inventory/movements</code></h3>
+        <p class="meta">Lists stock movement history with optional filters and pagination.</p>
+        <pre>Request
+GET /api/inventory/movements?limit=25&offset=0&type=STOCK_IN&productId=uuid&actorId=uuid
+
+Response 200
+{
+  "movements": [
+    {
+      "id": "uuid",
+      "ownerId": "uuid",
+      "actorId": "uuid",
+      "productId": "uuid",
+      "productName": "Widget A",
+      "type": "STOCK_IN",
+      "quantity": 10,
+      "reason": "Overflow transfer from warehouse A",
+      "createdAt": "2026-03-29T12:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "limit": 25,
+    "offset": 0,
+    "total": 1,
+    "hasMore": false
+  }
+}
+
+Supported filters
+- limit (default 50, max 200)
+- offset (default 0)
+- productId
+- actorId
+- type
+- createdFrom
+- createdTo</pre>
+      </article>
+
+      <article class="doc-section" id="inventory-movements-create">
+        <h3><code>POST /api/inventory/movements</code></h3>
+        <p class="meta">Records a stock movement and updates inventory quantities. The backend derives <code>actorId</code> from the authenticated account. Prefer <code>POST /api/inventory/adjustments</code> for manual adjustment UIs.</p>
+        <pre>Request
+POST /api/inventory/movements
+Content-Type: application/json
+
+{
+  "productId": "uuid",
+  "type": "STOCK_IN",
+  "quantity": 10,
+  "reason": "Overflow transfer from warehouse A"
+}
+
+Response 201
+{
+  "movement": {
+    "id": "uuid",
+    "ownerId": "uuid",
+    "actorId": "uuid",
+    "productId": "uuid",
+    "productName": "Widget A",
+    "type": "STOCK_IN",
+    "quantity": 10,
+    "reason": "Overflow transfer from warehouse A",
+    "createdAt": "2026-03-29T12:00:00.000Z"
+  },
+  "inventory": {
+    "productId": "uuid",
+    "ownerId": "uuid",
+    "productName": "Widget A",
+    "sku": "WIDGET-A",
+    "unitCost": 19.99,
+    "quantity": 25,
+    "valuation": 499.75,
+    "updatedAt": "2026-03-29T12:00:00.000Z"
+  }
+}
+
+Notes
+- Generic stock movement reasons are optional but persisted when provided.</pre>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

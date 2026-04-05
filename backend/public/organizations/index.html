@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Organizations API Documentation</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <p class="eyebrow">Documentation</p>
+      <h1>Organization Routes</h1>
+      <p class="lede">These pages document the live organization endpoints mounted under <code>/api/organizations</code>.</p>
+      <nav class="doc-nav">
+        <a href="/">All Docs</a>
+        <a href="#organizations-me">Current Organization</a>
+        <a href="#organizations-members">Members</a>
+        <a href="#organizations-member-count">Member Count</a>
+        <a href="#organizations-roles">Roles</a>
+        <a href="#organizations-permissions">Permissions</a>
+        <a href="#organizations-role-create">Create Role</a>
+        <a href="#organizations-member-update">Update Member</a>
+        <a href="#organizations-create">Create</a>
+        <a href="#organizations-update">Update</a>
+        <a href="#organizations-delete">Delete</a>
+      </nav>
+    </section>
+
+    <section class="card">
+      <article class="doc-section" id="organizations-me">
+        <h3><code>GET /api/organizations/me</code></h3>
+        <p class="meta">Returns the current organization summary for the authenticated user.</p>
+        <pre>Request
+GET /api/organizations/me
+Authorization: Bearer &lt;access-token&gt;
+
+Response 200
+{
+  "organization": {
+    "id": "uuid",
+    "name": "Current Org",
+    "criticalStockThreshold": 10,
+    "lowStockThreshold": 25
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="organizations-members">
+        <h3><code>GET /api/organizations/me/members</code></h3>
+        <p class="meta">Lists members in the authenticated user's current organization.</p>
+        <pre>Request
+GET /api/organizations/me/members
+Authorization: Bearer &lt;access-token&gt;
+
+Response 200
+{
+  "members": [
+    {
+      "accountId": "uuid",
+      "orgId": "uuid",
+      "email": "owner@example.com",
+      "username": "owner_user",
+      "name": "Owner",
+      "profileUrl": null,
+      "authProvider": "cognito",
+      "cognitoSub": "sub-123",
+      "roleId": "uuid",
+      "roleName": "owner",
+      "createdAt": "2026-03-28T00:00:00.000Z",
+      "updatedAt": "2026-03-29T12:00:00.000Z"
+    }
+  ]
+}</pre>
+      </article>
+
+      <article class="doc-section" id="organizations-member-count">
+        <h3><code>GET /api/organizations/me/members/count</code></h3>
+        <p class="meta">Returns the current organization and the number of members in it.</p>
+        <pre>Request
+GET /api/organizations/me/members/count
+Authorization: Bearer &lt;access-token&gt;
+
+Response 200
+{
+  "organization": {
+    "id": "uuid",
+    "name": "Current Org",
+    "criticalStockThreshold": 10,
+    "lowStockThreshold": 25
+  },
+  "memberCount": 2
+}</pre>
+      </article>
+
+      <article class="doc-section" id="organizations-roles">
+        <h3><code>GET /api/organizations/me/roles</code></h3>
+        <p class="meta">Lists roles in the authenticated user's current organization.</p>
+        <pre>Request
+GET /api/organizations/me/roles
+
+Response 200
+{
+  "roles": [
+    {
+      "id": "uuid",
+      "orgId": "uuid",
+      "name": "manager",
+      "createdAt": "2026-04-01T00:00:00.000Z",
+      "permissions": [
+        "organization:members:read",
+        "inventory:read"
+      ]
+    }
+  ]
+}</pre>
+      </article>
+
+      <article class="doc-section" id="organizations-permissions">
+        <h3><code>GET /api/organizations/me/permissions</code></h3>
+        <p class="meta">Returns the assignable permission catalog for role-management screens.</p>
+        <pre>Request
+GET /api/organizations/me/permissions
+
+Response 200
+{
+  "permissions": [
+    {
+      "id": 101,
+      "key": "organization:read"
+    }
+  ],
+  "permissionMap": {
+    "organization:read": 101
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="organizations-role-create">
+        <h3><code>POST /api/organizations/me/roles</code></h3>
+        <p class="meta">Creates a custom role in the current organization.</p>
+        <pre>Request
+POST /api/organizations/me/roles
+Content-Type: application/json
+
+{
+  "name": "auditor",
+  "permissions": [
+    "organization:read",
+    "inventory:read"
+  ]
+}
+
+Response 201
+{
+  "role": {
+    "id": "uuid",
+    "orgId": "uuid",
+    "name": "auditor",
+    "createdAt": "2026-04-04T00:00:00.000Z",
+    "permissions": [
+      "organization:read",
+      "inventory:read"
+    ]
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="organizations-member-update">
+        <h3><code>PATCH /api/organizations/me/members/:accountId</code></h3>
+        <p class="meta">Updates the role assignment for a member in the current organization.</p>
+        <pre>Request
+PATCH /api/organizations/me/members/11111111-1111-1111-1111-111111111111
+Content-Type: application/json
+
+{
+  "roleId": "22222222-2222-2222-2222-222222222222"
+}
+
+Response 200
+{
+  "member": {
+    "accountId": "uuid",
+    "orgId": "uuid",
+    "email": "member@example.com",
+    "username": "member_user",
+    "name": "Member",
+    "profileUrl": null,
+    "authProvider": "cognito",
+    "cognitoSub": "sub-123",
+    "roleId": "uuid",
+    "roleName": "auditor",
+    "createdAt": "2026-03-28T00:00:00.000Z",
+    "updatedAt": "2026-04-04T00:00:00.000Z"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="organizations-create">
+        <h3><code>POST /api/organizations</code></h3>
+        <p class="meta">Creates a new organization, creates the owner role, and switches the current account into the new organization.</p>
+        <pre>Request
+POST /api/organizations
+Authorization: Bearer &lt;access-token&gt;
+Content-Type: application/json
+
+{
+  "name": "Acme Warehouse"
+}
+
+Response 201
+{
+  "organization": {
+    "id": "uuid",
+    "name": "Acme Warehouse"
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="organizations-update">
+        <h3><code>PATCH /api/organizations/:organizationId</code></h3>
+        <p class="meta">Updates the authenticated user's current organization if the caller has the required org permission.</p>
+        <pre>Request
+PATCH /api/organizations/9e4a6f64-1111-2222-3333-444444444444
+Authorization: Bearer &lt;access-token&gt;
+Content-Type: application/json
+
+{
+  "name": "Acme Warehouse SG",
+  "criticalStockThreshold": 5,
+  "lowStockThreshold": 15
+}
+
+Response 200
+{
+  "organization": {
+    "id": "9e4a6f64-1111-2222-3333-444444444444",
+    "name": "Acme Warehouse SG",
+    "criticalStockThreshold": 5,
+    "lowStockThreshold": 15
+  }
+}</pre>
+      </article>
+
+      <article class="doc-section" id="organizations-delete">
+        <h3><code>DELETE /api/organizations/:organizationId</code></h3>
+        <p class="meta">Deletes the authenticated user's current organization if allowed. Deletion can be blocked by existing related records.</p>
+        <pre>Request
+DELETE /api/organizations/9e4a6f64-1111-2222-3333-444444444444
+Authorization: Bearer &lt;access-token&gt;
+
+Response 200
+{
+  "organization": {
+    "id": "9e4a6f64-1111-2222-3333-444444444444",
+    "name": "Acme Warehouse SG"
+  }
+}</pre>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

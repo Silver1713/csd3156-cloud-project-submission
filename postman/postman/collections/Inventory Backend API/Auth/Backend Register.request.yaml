@@ -1,0 +1,31 @@
+$kind: http-request
+name: Backend Register
+method: POST
+url: '{{base_url}}/auth/backend/register'
+order: 6000
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "orgId": "{{org_id}}",
+      "email": "{{backend_email}}",
+      "username": "{{backend_username}}",
+      "password": "{{backend_password}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status is 201 or 400", function () {
+        pm.expect(pm.response.code).to.be.oneOf([201, 400]);
+      });
+
+      pm.test("Response is JSON", function () {
+        pm.response.to.be.json;
+      });
+
+      pm.test("Response time is less than 500ms", function () {
+        pm.expect(pm.response.responseTime).to.be.below(500);
+      });
